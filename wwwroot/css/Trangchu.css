@@ -1,0 +1,24 @@
+﻿*{
+    padding:0px;
+    margin:0px;
+}
+
+.background-dark {
+    background-color: #e7e7e7;
+}
+
+.background-white {
+    background-color: white;
+}
+
+.icon {
+    color: orange; /* Đổi màu sang cam */
+    font-weight: 1000;
+}
+
+.content1{
+    margin:20px 25px 20px 25px;
+}
+
+
+

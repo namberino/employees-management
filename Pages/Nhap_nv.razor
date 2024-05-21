@@ -1,0 +1,977 @@
+﻿@page "/nhap_nv"
+@page "/nhap_nv/{MaNV}"
+
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+<PageTitle>Nhập nhân viên</PageTitle>
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+
+    .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    .form-label {
+        text-align: right;
+        margin-right: 10px;
+    }
+
+    .form-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .form-control,
+    .form-select {
+        background-color: white !important;
+        width: 95%;
+    }
+
+    .col-sm-4 {
+        flex: 0 0 auto;
+        width: 30%;
+    }
+</style>
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="custom.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="waypoints.min.js"></script>
+    <script src="js1.js"></script>
+    <script src="bt4.js"></script>
+</HeadContent>
+
+<div class="container-fluid position-relative d-flex p-0"
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 6" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                            <div class="dropdown-menu bg-transparent border-0 ">
+                                <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+
+                                <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                                <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                            </div>
+                    }
+                </div>
+
+                @if (user_role == "Cap 5" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                {
+                        <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 4" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                            <div class="dropdown-menu bg-transparent border-0 ">
+                                <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                                <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                            </div>
+                    }
+                </div>
+                <div class="navbar-nav w-100">
+                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                            <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+            <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                @* <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div> *@
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+
+                        <a href="/" class="dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+
+       <div class="container-fluid pt-4 px-4">
+                <div class="bg-white text-left rounded p-4">
+                    <i style="color: darkorange; text-decoration:underline;font-size:18px " class="fa fa-arrow-left" aria-hidden="true" onclick="window.location.href='/Danhsach_nv'"> Quay lại</i>
+                    <br /> <br />
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="mb-0 text-dark">Thông tin cá nhân</h5>
+
+                    </div>
+                     <div class="col-md-12">
+                        <div class="text-center">
+                            <img alt="Admin1" src="css/image/user.svg" class="rounded-circle img-responsive mt-2" width="128" height="128">
+                            <div class="mt-2">
+                                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="updateAllImages()">
+                                <label for="fileInput" id="labelInput" class="btn btn-primary"><i class="fas fa-upload"></i>Upload</label>
+                            </div>
+                            <small>For best results, use an image at least 128px by 128px in .jpg format</small>
+                        </div>
+                    </div><br><br />
+       <form class="needs-validation" id="formProduct" novalidate>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group row mb-3">
+                    <label for="input1" class="col-sm-4 col-form-label">Họ tên</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="HoTen" id="input1" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input2" class="col-sm-4 col-form-label">Ngày sinh</label>
+                    <div class="col-sm-8">
+                        <input type="date" class="form-control" @bind="NgaySinh" id="input2" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input3" class="col-sm-4 col-form-label">Giới tính</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" @bind="GioiTinh" id="input3" required>
+                            <option></option>
+                            <option>Nam</option>
+                            <option>Nữ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input4" class="col-sm-4 col-form-label">CCCD</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="CCCD" id="input4" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input5" class="col-sm-4 col-form-label">Số điện thoại</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="SoDienThoai" id="input5" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input6" class="col-sm-4 col-form-label">Mã bảo hiểm</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="MaBaoHiem" id="input6" required>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group row mb-3">
+                    <label for="input9" class="col-sm-4 col-form-label">Trình độ học vấn</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="TrinhDoHocVan" id="input9" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input10" class="col-sm-4 col-form-label">Tên ngân hàng</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="TenNganHang" id="input10" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input11" class="col-sm-4 col-form-label">Số tài khoản</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="STKNganHang" id="input11" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input12" class="col-sm-4 col-form-label">Mã số thuế</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="MaSoThue" id="input12" required>
+                    </div>
+                </div>
+                                <div class="form-group row mb-3">
+                    <label for="input7" class="col-sm-4 col-form-label">Thường trú</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="DiaChiThuongChu" id="input7" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input8" class="col-sm-4 col-form-label">Tạm trú</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="DiaChiTamChu" id="input8" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <br><hr><br>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="mb-0 text-dark">Thông tin chi tiết về công việc</h5>
+    </div>
+
+
+    <form class="needs-validation" id="formProduct" novalidate>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group row mb-3">
+                    <label for="input13" class="col-sm-4 col-form-label">Mã nhân viên</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="MaNV" id="input13" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input14" class="col-sm-4 col-form-label">Email công việc</label>
+                    <div class="col-sm-8">
+                        <input type="email" class="form-control" @bind="MailLamViec" id="input14" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input15" class="col-sm-4 col-form-label">Loại nhân viên</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" @bind="LoaiNhanVien" id="input15" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input16" class="col-sm-4 col-form-label">Chức vụ</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" @bind="ChucVu" id="input16" required>
+                            <option></option>
+                            <option>Chủ tịch</option>
+                            <option>Giám đốc</option>
+                            <option>Phó giám đốc</option>
+                            <option>Trưởng phòng</option>
+                            <option>Phó phòng</option>
+                            <option>Nhân viên</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input17" class="col-sm-4 col-form-label">Phòng ban</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" @bind="PhongBan" id="input17" required>
+                            <option></option>
+                                        @foreach (var phongBan in DanhSachPhongBan)
+                                        {
+                                        <option value="@phongBan">@phongBan</option>
+                                        }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group row mb-3">
+                    <label for="input19" class="col-sm-4 col-form-label">Yêu cầu chấm công</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" @bind="YeuCauChamCong" id="input19" required>
+                            <option></option>
+                            <option>Có</option>
+                            <option>Không</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input20" class="col-sm-4 col-form-label">Bắt đầu làm</label>
+                    <div class="col-sm-8">
+                        <input type="date" class="form-control" @bind="BatDauLamViec" id="input20" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input21" class="col-sm-4 col-form-label">Chính thức làm</label>
+                    <div class="col-sm-8">
+                        <input type="date" class="form-control" @bind="ChinhThucLamViec" id="input21" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input22" class="col-sm-4 col-form-label">Ngày nghỉ việc</label>
+                    <div class="col-sm-8">
+                        <input type="date" class="form-control" @bind="NgayNghiViec" id="input22" required>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="input23" class="col-sm-4 col-form-label">Trạng thái</label>
+                    <div class="col-sm-8">
+                        <select class="form-select" @bind="TrangThai" id="input23" required>
+                            <option></option>
+                            <option>Đang làm việc</option>
+                            <option>Đã nghỉ việc</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form><br>
+
+                    <div class="mb-3 text-center">
+                    @if (isAdding)
+                    {
+                    <button id="addButton" class="btn btn-primary" type="button" @onclick="ThemMoi">Thêm mới</button>
+                    }
+                    else
+                    {
+                    <button id="editButton" class="btn btn-primary" type="button" @onclick="CapNhatThongTin">Cập nhật</button>
+                    }
+                    </div>
+                </div>
+            </div>
+
+    <!-- Content End -->
+    <!-- Footer Start -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-white rounded-top p-4">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 text-center text-sm-start">
+                            Copyright © 2024 Project - 22IT1 - CMC Uni.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<script>
+    function kiemTra(input) {
+        var pattern = /[0-9*+\-_=?><":;'!.,#$%^&/*()\u0040\u007B\u007D\u005B\u005D\u005C\u007C]/;
+        if (pattern.test(input.value)) {
+            input.value = input.value.replace(/[0-9*+\-_=?><":;'!.,#$%^&/*()\u0040\u007B\u007D\u005B\u005D\u005C\u007C]/g, '');
+        }
+    }
+
+    var inputFields = [
+        document.getElementById('input1'), // Họ tên
+        document.getElementById('input7'), // Thường trú
+        document.getElementById('input8'), // Tạm trú
+        document.getElementById('input9'), // Trình độ học vấn
+        document.getElementById('input10'), // Tên ngân hàng
+        document.getElementById('input15') // Loại nhân viên
+    ];
+
+    inputFields.forEach(function (input) {
+        input.addEventListener('input', function (event) {
+            kiemTra(event.target);
+        });
+    });
+
+    // Lấy ra các ô input cần chặn nhập số và các dấu
+    var inputFields = [
+        document.getElementById('input14'), // Email công việc
+        document.getElementById('input13') // Mã nhân viên
+    ];
+
+    // Thêm sự kiện "input" cho từng ô input
+    inputFields.forEach(function (input) {
+        input.addEventListener('input', function (event) {
+            var value = event.target.value;
+
+            // Nếu là ô nhập Mã nhân viên, kiểm tra số nguyên từ 1 đến 10 chữ số
+            if (input.id === 'input13') {
+                if (!(/^\d{0,10}$/.test(value) && value >= 0 && value <= 9999999999)) {
+                    // Nếu không phù hợp, đặt giá trị nhập vào thành giá trị trước đó
+                    event.target.value = event.target.dataset.previousValue || '';
+                } else {
+                    // Nếu phù hợp, lưu giữ giá trị nhập vào để sử dụng trong lần kiểm tra tiếp theo
+                    event.target.dataset.previousValue = value;
+                }
+            }
+            // Nếu là ô nhập Email công việc
+            if (input.id === 'input14') {
+                // Loại bỏ các ký tự không phải chữ cái, số, dấu cách,a còng
+                event.target.value = value.replace(/[^a-zA-Z0-9\s@colon.]/g, '');
+            }
+        });
+    });
+
+    // Lấy ra các ô input cần chặn nhập các ký tự không phải số và giới hạn số lượng ký tự
+    var numericInputFields = [
+        { id: 'input4', maxLength: 12 }, // CCCD
+        { id: 'input5', maxLength: 10 }, // Số điện thoại
+        { id: 'input6', maxLength: null }, // Mã bảo hiểm (không giới hạn)
+        { id: 'input11', maxLength: null }, // Số tài khoản ngân hàng (không giới hạn)
+        { id: 'input12', maxLength: null } // Mã số thuế (không giới hạn)
+    ];
+
+    // Thêm sự kiện "input" cho từng ô input số
+    numericInputFields.forEach(function (field) {
+        var input = document.getElementById(field.id);
+
+        input.addEventListener('input', function (event) {
+            var value = event.target.value;
+
+            // Loại bỏ các ký tự không phải số từ giá trị nhập vào
+            var newValue = value.replace(/[^\d]/g, '');
+
+            // Kiểm tra và giới hạn số lượng ký tự nếu cần
+            if (field.maxLength !== null && newValue.length > field.maxLength) {
+                newValue = newValue.slice(0, field.maxLength);
+            }
+
+            // Cập nhật giá trị mới vào ô input
+            event.target.value = newValue;
+        });
+    });
+</script>
+@using FullProject.Model;
+@using FullProject.Services;
+@using static FullProject.Services.ThietLapService
+@using Microsoft.JSInterop;
+@using System.Text.RegularExpressions
+@inject ThietLapService thietlapservices;
+@inject IJSRuntime JSRuntime;
+
+@code {
+
+    private bool isAdding = false; // Mặc định là không thêm mới
+
+    private string user_role = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+        }
+
+        // Kiểm tra và khởi tạo DanhSachPhongBan
+        if (DanhSachPhongBan == null)
+        {
+            DanhSachPhongBan = new List<string>();
+        }
+
+        // Lấy mã nhân viên từ URL
+        MaNV = NavigationManagers.Uri.Split('/').Last();
+
+        // Gọi phương thức để tải thông tin nhân viên từ cơ sở dữ liệu
+        await LoadEmployeeData(MaNV);
+        // Gọi phương thức LoadDanhSachPhongBan để nạp danh sách từ dịch vụ
+        await LoadDanhSachPhongBan();
+        // Kiểm tra nếu MaNV có giá trị, đồng nghĩa với việc đang ở chế độ cập nhật
+        if (MaNV == "nhap_nv")
+        {
+            MaNV = "";
+            isAdding = true; // Đặt trạng thái là thêm mới
+        }
+
+    }
+
+    // Khai báo các biến chứa thông tin từ form nhập
+    public string HoTen;
+    public DateTime NgaySinh;
+    public DateTime? NgaySinhnull;
+    public string GioiTinh;
+    public string CCCD;
+    public string SoDienThoai;
+    public string MaBaoHiem;
+    public string DiaChiThuongChu;
+    public string DiaChiTamChu;
+    public string TrinhDoHocVan;
+    public string TenNganHang;
+    public string STKNganHang;
+    public string MaSoThue;
+    public string PhongBan;
+    [Parameter]
+    public string MaNV { get; set; }
+    public string MailLamViec;
+    public string LoaiNhanVien;
+    public string ChucVu;
+    public string MaPhongBan;
+    public string YeuCauChamCong;
+    public DateTime BatDauLamViec;
+    public DateTime ChinhThucLamViec;
+    public DateTime? NgayNghiViec;
+    public string TrangThai;
+    public List<string> DanhSachPhongBan { get; set; }
+    public string TenPhongBan;
+
+
+    // Phương thức để load danh sách phòng ban từ dịch vụ DataService
+    public async Task LoadDanhSachPhongBan()
+    {
+        try
+        {
+            // Gọi phương thức từ dịch vụ
+            DanhSachPhongBan = await thietlapservices.LoadDanhSachPhongBan();
+        }
+        catch (Exception ex)
+        {
+            // Xử lý ngoại lệ ở đây, ví dụ: ghi log, thông báo cho người dùng, v.v.
+            Console.WriteLine($"Lỗi xảy ra khi tải danh sách phòng ban: {ex.Message}");
+        }
+    }
+
+    private async Task ThemMoi()
+    {
+        try
+        {
+            // Kiểm tra xem ngày nghỉ việc có được nhập không
+            DateTime? ngayNghiViecValue = null;
+            if (NgayNghiViec.HasValue)
+            {
+                ngayNghiViecValue = NgayNghiViec.Value; // Lấy giá trị của ngày nghỉ việc
+            }
+            if (string.IsNullOrWhiteSpace(MaNV))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã nhân viên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(HoTen))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Họ tên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(CCCD))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "CCCD không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(SoDienThoai))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Số điện thoại không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MaBaoHiem))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã bảo hiểm không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(DiaChiThuongChu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Địa chỉ thường chú không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(DiaChiTamChu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Địa chỉ tạm chú không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TrinhDoHocVan))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Trình độ học vấn không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TenNganHang))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Tên ngân hàng không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(STKNganHang))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Số tài khoản ngân hàng không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MaSoThue))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã số thuế không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MailLamViec))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Email công việc không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(LoaiNhanVien))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Loại nhân viên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(ChucVu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Chức vụ không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(PhongBan))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Phòng ban không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(YeuCauChamCong))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Yêu cầu chấm công không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TrangThai))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Trạng thái không được bỏ trống.");
+                return;
+            }
+
+            // Kiểm tra tính hợp lệ của mã nhân viên
+            if (!ValidateMaNV(MaNV))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Bạn cần nhập mã nhân viên dưới dạng số nguyên từ 1 đến 10 số");
+                return;
+            }
+            // Lấy mã phòng ban từ tên đã chọn
+            var maPhongBan = await thietlapservices.LayMaPhongBanTuTen(PhongBan);
+
+            // Tạo một đối tượng mới để lưu trữ dữ liệu nhập từ người dùng
+            NhanVien newNhanVien = new NhanVien
+                {
+                    HoTen = HoTen,
+                    NgaySinh = NgaySinh,
+                    GioiTinh = GioiTinh,
+                    CCCD = CCCD,
+                    SoDienThoai = SoDienThoai,
+                    MaBaoHiem = MaBaoHiem,
+                    DiaChiThuongChu = DiaChiThuongChu,
+                    DiaChiTamChu = DiaChiTamChu,
+                    TrinhDoHocVan = TrinhDoHocVan,
+                    TenNganHang = TenNganHang,
+                    STKNganHang = STKNganHang,
+                    MaSoThue = MaSoThue,
+                    MaNV = MaNV,
+                    MailLamViec = MailLamViec,
+                    LoaiNhanVien = LoaiNhanVien,
+                    ChucVu = ChucVu,
+                    MaPhongBan = maPhongBan,
+                    YeuCauChamCong = YeuCauChamCong,
+                    BatDauLamViec = BatDauLamViec,
+                    ChinhThucLamViec = ChinhThucLamViec,
+                    NgayNghiViec = ngayNghiViecValue,
+                    TrangThai = TrangThai
+                };
+
+            // Gọi phương thức thêm mới từ dịch vụ hoặc lớp xử lý dữ liệu
+            await thietlapservices.ThemMoiNhanVienAsync(newNhanVien);
+            await JSRuntime.InvokeAsync<object>("window.alert", "Thêm thành công");
+        }
+        catch (Exception ex)
+        {
+            // Xử lý ngoại lệ ở đây, ví dụ: ghi log, thông báo cho người dùng, v.v.
+            Console.WriteLine($"Lỗi xảy ra khi thêm mới nhân viên: {ex.Message}");
+            // Hoặc hiển thị thông báo lỗi cho người dùng
+            await JSRuntime.InvokeAsync<object>("window.alert", "Đã xảy ra lỗi khi thêm mới nhân viên");
+        }
+    }
+
+    private async Task GetEmployeeInfo(string maNV)
+    {
+        try
+        {
+            // Lấy thông tin nhân viên từ dịch vụ hoặc lớp xử lý dữ liệu
+            var nhanvien = await thietlapservices.GetEmployeeInfo(maNV);
+            // Kiểm tra nếu nhân viên không null trước khi gán giá trị cho các biến
+            if (nhanvien != null)
+            {
+                HoTen = nhanvien.HoTen;
+                NgaySinh = nhanvien.NgaySinh;
+                GioiTinh = nhanvien.GioiTinh;
+                CCCD = nhanvien.CCCD;
+                SoDienThoai = nhanvien.SoDienThoai;
+                MaBaoHiem = nhanvien.MaBaoHiem;
+                DiaChiThuongChu = nhanvien.DiaChiThuongChu;
+                DiaChiTamChu = nhanvien.DiaChiTamChu;
+                TrinhDoHocVan = nhanvien.TrinhDoHocVan;
+                TenNganHang = nhanvien.TenNganHang;
+                STKNganHang = nhanvien.STKNganHang;
+                MaSoThue = nhanvien.MaSoThue;
+                MaNV = nhanvien.MaNV;
+                MailLamViec = nhanvien.MailLamViec;
+                LoaiNhanVien = nhanvien.LoaiNhanVien;
+                ChucVu = nhanvien.ChucVu;
+                PhongBan = nhanvien.PhongBan;
+                YeuCauChamCong = nhanvien.YeuCauChamCong;
+                BatDauLamViec = nhanvien.NgayBatDauLam;
+                ChinhThucLamViec = nhanvien.NgayChinhThucLam;
+                NgayNghiViec = nhanvien.NgayNghiViec;
+                TrangThai = nhanvien.TrangThai;
+            }
+            else
+            {
+                // Xử lý trường hợp không tìm thấy thông tin nhân viên
+                await JSRuntime.InvokeAsync<object>("window.alert", "Không tìm thấy thông tin nhân viên");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Xử lý ngoại lệ ở đây, ví dụ: ghi log, thông báo cho người dùng, v.v.
+            Console.WriteLine($"Lỗi xảy ra khi lấy thông tin nhân viên: {ex.Message}");
+            // Hoặc hiển thị thông báo lỗi cho người dùng
+            await JSRuntime.InvokeAsync<object>("window.alert", "Đã xảy ra lỗi khi lấy thông tin nhân viên");
+        }
+    }
+
+
+    [Inject] NavigationManager NavigationManagers { get; set; }
+
+    // Phương thức để tải thông tin nhân viên từ cơ sở dữ liệu
+    private async Task LoadEmployeeData(string maNV)
+    {
+        var employeeInfo = await thietlapservices.GetEmployeeInfo(maNV);
+        if (employeeInfo != null)
+        {
+            HoTen = employeeInfo.HoTen;
+            ChucVu = employeeInfo.ChucVu;
+            PhongBan = employeeInfo.PhongBan;
+            MailLamViec = employeeInfo.MailLamViec;
+            TrangThai = employeeInfo.TrangThai;
+            NgaySinh = employeeInfo.NgaySinh;
+            GioiTinh = employeeInfo.GioiTinh;
+            CCCD = employeeInfo.CCCD;
+            SoDienThoai = employeeInfo.SoDienThoai;
+            MaBaoHiem = employeeInfo.MaBaoHiem;
+            DiaChiThuongChu = employeeInfo.DiaChiThuongChu;
+            DiaChiTamChu = employeeInfo.DiaChiTamChu;
+            TrinhDoHocVan = employeeInfo.TrinhDoHocVan;
+            TenNganHang = employeeInfo.TenNganHang;
+            STKNganHang = employeeInfo.STKNganHang;
+            MaSoThue = employeeInfo.MaSoThue;
+            LoaiNhanVien = employeeInfo.LoaiNhanVien;
+            PhongBan = employeeInfo.PhongBan;
+            YeuCauChamCong = employeeInfo.YeuCauChamCong;
+            BatDauLamViec = employeeInfo.NgayBatDauLam;
+            ChinhThucLamViec = employeeInfo.NgayChinhThucLam;
+            NgayNghiViec = employeeInfo.NgayNghiViec;
+        }
+    }
+
+    private async Task CapNhatThongTin()
+    {
+        try
+        {
+            // Kiểm tra xem ngày nghỉ việc có được nhập không
+            DateTime? ngayNghiViecValue = null;
+            if (NgayNghiViec.HasValue)
+            {
+                ngayNghiViecValue = NgayNghiViec.Value;
+            }
+
+            if (string.IsNullOrWhiteSpace(MaNV))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã nhân viên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(HoTen))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Họ tên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(CCCD))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "CCCD không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(SoDienThoai))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Số điện thoại không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MaBaoHiem))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã bảo hiểm không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(DiaChiThuongChu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Địa chỉ thường chú không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(DiaChiTamChu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Địa chỉ tạm chú không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TrinhDoHocVan))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Trình độ học vấn không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TenNganHang))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Tên ngân hàng không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(STKNganHang))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Số tài khoản ngân hàng không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MaSoThue))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Mã số thuế không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(MailLamViec))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Email công việc không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(LoaiNhanVien))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Loại nhân viên không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(ChucVu))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Chức vụ không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(PhongBan))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Phòng ban không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(YeuCauChamCong))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Yêu cầu chấm công không được bỏ trống.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(TrangThai))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Trạng thái không được bỏ trống.");
+                return;
+            }
+
+            // Kiểm tra tính hợp lệ của mã nhân viên
+            if (!ValidateMaNV(MaNV))
+            {
+                await JSRuntime.InvokeAsync<object>("window.alert", "Bạn cần nhập mã nhân viên dưới dạng số nguyên từ 1 đến 10 số");
+                return;
+            }
+
+            // Lấy mã phòng ban từ tên đã chọn
+            var maPhongBan = await thietlapservices.LayMaPhongBanTuTen(PhongBan);
+
+            // Tạo một đối tượng mới để lưu trữ dữ liệu nhập từ người dùng
+            NhanVien updatedNhanVien = new NhanVien
+                {
+                    HoTen = HoTen,
+                    NgaySinh = NgaySinh,
+                    GioiTinh = GioiTinh,
+                    CCCD = CCCD,
+                    SoDienThoai = SoDienThoai,
+                    MaBaoHiem = MaBaoHiem,
+                    DiaChiThuongChu = DiaChiThuongChu,
+                    DiaChiTamChu = DiaChiTamChu,
+                    TrinhDoHocVan = TrinhDoHocVan,
+                    TenNganHang = TenNganHang,
+                    STKNganHang = STKNganHang,
+                    MaSoThue = MaSoThue,
+                    MaNV = MaNV,
+                    MailLamViec = MailLamViec,
+                    LoaiNhanVien = LoaiNhanVien,
+                    ChucVu = ChucVu,
+                    MaPhongBan = maPhongBan,
+                    YeuCauChamCong = YeuCauChamCong,
+                    BatDauLamViec = BatDauLamViec,
+                    ChinhThucLamViec = ChinhThucLamViec,
+                    NgayNghiViec = ngayNghiViecValue,
+                    TrangThai = TrangThai
+                };
+
+            // Gọi phương thức cập nhật từ dịch vụ hoặc lớp xử lý dữ liệu
+            await thietlapservices.CapNhatThongTinNhanVienAsync(updatedNhanVien);
+
+            // Hiển thị thông báo cập nhật thành công
+            await JSRuntime.InvokeAsync<object>("window.alert", "Cập nhật thông tin nhân viên thành công!");
+
+        }
+        catch (Exception ex)
+        {
+            // Xử lý ngoại lệ ở đây, ví dụ: ghi log, thông báo cho người dùng, v.v.
+            Console.WriteLine($"Lỗi xảy ra khi cập nhật thông tin nhân viên: {ex.Message}");
+            // Hoặc hiển thị thông báo lỗi cho người dùng
+            await JSRuntime.InvokeAsync<object>("window.alert", "Đã xảy ra lỗi khi cập nhật thông tin nhân viên");
+        }
+    }
+
+    // Phương thức validate mã nhân viên
+    private bool ValidateMaNV(string maNV)
+    {
+        // Sử dụng Regex để kiểm tra chuỗi chỉ chứa số và có từ 1 đến 10 chữ số
+        Regex regex = new Regex(@"^\d{0,10}$");
+
+        // Kiểm tra xem chuỗi có khớp với Regex và không chứa các ký tự không phải số không
+        if (regex.IsMatch(maNV))
+        {
+            // Kiểm tra xem chuỗi có phải là một số nguyên dương không
+            if (long.TryParse(maNV, out long result) && result > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+}
+

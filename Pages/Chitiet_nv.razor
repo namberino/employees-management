@@ -1,0 +1,386 @@
+﻿@page "/chitiet_nv/{MaNV}"
+
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+@inject ThietLapService thietlapservices
+
+<PageTitle>Chi tiết nhân viên</PageTitle>
+
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="custom.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="waypoints.min.js"></script>
+    <script src="js1.js"></script>
+    <script src="bt4.js"></script>
+</HeadContent>
+
+<PageTitle>Danh sách nhân viên</PageTitle>
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+
+    .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+</style>
+<style>
+    /* Overall page styling */
+    body {
+        background-color: #f8f9fa;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        display: flex;
+        max-width: 1400px; /* Tăng chiều rộng */
+        margin: 0 auto;
+        padding: 20px;
+        flex-wrap: wrap; /* Cho phép các flex item chuyển dòng khi không đủ không gian */
+    }
+
+    /* Flexbox container for columns */
+    .column-container {
+        display: flex;
+        flex-direction: column;
+        flex-basis: 100%; /* Sử dụng toàn bộ không gian trên hàng */
+    }
+
+    /* Flexbox container for two columns */
+    .two-column-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between; /* Canh giữa các cột */
+        flex-basis: 100%; /* Tăng chiều rộng */
+    }
+
+    /* Flexbox container for three columns */
+    .three-column-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-basis: 100%;
+    }
+
+    /* Employee details card styling */
+    .employee-details-card {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+    }
+
+        .employee-details-card h2 {
+            margin-top: 0;
+            color: #333;
+            display: flex;
+            align-items: center; /* Canh giữa theo chiều dọc */
+        }
+
+            .employee-details-card h2 i {
+                margin-right: 10px;
+            }
+
+        .employee-details-card p {
+            margin: 5px 0;
+        }
+
+        .employee-details-card hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+        }
+
+    /* Active status color */
+    .active-status {
+        color: green;
+    }
+
+    .avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .avatar-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .employee-code {
+        background-color: orange;
+        padding: 2px 5px;
+        border-radius: 4px;
+        color: white;
+    }
+</style>
+
+<div class="container-fluid position-relative d-flex p-0 ">
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                    <div class="dropdown-menu bg-transparent border-0 ">
+                        <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+
+                        <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                        <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                    </div>
+                </div>
+
+                <a href="danhsach_nv" class="nav-item nav-link active "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                    <div class="dropdown-menu bg-transparent border-0 ">
+                        <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                        <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                    </div>
+                </div>
+                <div class="navbar-nav w-100">
+                    @*                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                    <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-money-check me-2"></i>Cấp tài khoản</a>
+                    } *@
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+            <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+ @*                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div> *@
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+
+                        <a href="/" class="dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+                <!-- Navbar End -->
+        <div class="container-fluid pt-4 px-4 ">
+
+            <div class="text-left rounded p-4 bg-white">
+                <i style="color: darkorange; text-decoration:underline;font-size:18px " class="fa fa-arrow-left" aria-hidden="true" onclick="window.location.href='/Danhsach_nv'"> Quay lại</i>
+                <br /> <br />
+                <b><h3 class="text-dark">Thông tin nhân viên</h3></b>
+            </div>
+        </div>
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="employee-details-card">
+                <!-- Tên nhân viên -->
+                <h2>@employee.HoTen</h2>
+                <hr />
+                <div class="three-column-container">
+                    <div>
+                        <p><strong><i class="fas fa-id-badge"></i> Mã nhân viên:</strong> <span class="employee-code">@employee.MaNV</span></p>
+                        <p><strong><i class="fas fa-toggle-on"></i> Trạng thái:</strong> <span class="active-status">@employee.TrangThai</span></p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-user-tie"></i> Chức vụ:</strong> @employee.ChucVu</p>
+                        <p><strong><i class="fas fa-building"></i> Phòng ban:</strong> @employee.PhongBan</p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-phone"></i> Phone:</strong> @employee.SoDienThoai</p>
+                        <p><strong><i class="fas fa-envelope"></i> Email:</strong> @employee.MailLamViec</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="employee-details-card">
+                <h2><i class="fas fa-briefcase"></i> Job Details</h2>
+
+                <div class="two-column-container">
+                    <div>
+                        <p><strong><i class="fas fa-user-clock"></i> Loại nhân viên:</strong> @employee.LoaiNhanVien</p>
+                        <p><strong><i class="fas fa-code-branch"></i> Yêu cầu chấm công:</strong> @employee.YeuCauChamCong</p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-calendar-alt"></i> Bắt đầu làm:</strong> @employee.NgayBatDauLam.ToShortDateString()</p>
+                        <p><strong><i class="fas fa-clock"></i> Yêu cầu chấm công:</strong> @employee.YeuCauChamCong</p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-calendar-check"></i> Chính thức làm:</strong> @employee.NgayChinhThucLam.ToShortDateString()</p>
+                        <p>
+                            <strong><i class="fas fa-id-card"></i> Ngày nghỉ việc:</strong> @if (employee.NgayNghiViec.HasValue)
+                            {
+                                @employee.NgayNghiViec.Value.ToShortDateString()
+                            }
+                            else
+                            {
+                                <span> Chưa nghỉ việc</span>
+                            }
+                        </p>
+                                    
+                    </div>
+                </div>
+
+                <hr />
+                <h2><i class="fas fa-user"></i> Personal Information</h2>
+
+                <div class="three-column-container">
+                    <div>
+                        <p><strong><i class="fas fa-venus-mars"></i> Giới tính:</strong> @employee.GioiTinh</p>
+                        <p><strong><i class="fas fa-map-marker-alt"></i> Thường trú:</strong> @employee.DiaChiThuongChu</p>
+                        <p><strong><i class="fas fa-envelope"></i> Số tài khoản:</strong> @employee.STKNganHang</p>
+                        <p><strong><i class="fas fa-envelope"></i> Mã bảo hiểm:</strong> @employee.MaBaoHiem</p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-birthday-cake"></i> Ngày sinh:</strong> @employee.NgaySinh.ToShortDateString()</p>
+                        <p><strong><i class="fas fa-address-card"></i> Tạm trú:</strong> @employee.DiaChiTamChu</p>
+                        <p><strong><i class="fas fa-graduation-cap"></i> Tên ngân hàng:</strong> @employee.TenNganHang</p>
+                    </div>
+                    <div>
+                        <p><strong><i class="fas fa-id-card"></i> CCCD:</strong> @employee.CCCD</p>
+                        <p><strong><i class="fas fa-university"></i> Mã số thuế:</strong> @employee.MaSoThue</p>
+                        <p><strong><i class="fas fa-graduation-cap"></i> Trình độ học vấn:</strong> @employee.TrinhDoHocVan</p>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+            </div>
+            <!-- Content End -->
+        </div>
+
+        <!-- Footer Start -->
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="bg-secondary rounded-top p-4 bg-white">
+                <div class="row ">
+                    <div class="col-12 col-sm-6 text-center text-sm-start ">
+                        Copyright © 2024 Project - 22IT1 - CMC Uni.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+
+
+
+@using FullProject.Model;
+@using FullProject.Services;
+@using static FullProject.Services.ThietLapService
+@using Microsoft.JSInterop;
+@inject ThietLapService thietlapservices;
+@inject IJSRuntime JSRuntime;
+@code {
+    private NhanVienInfo employee = new NhanVienInfo();
+
+    [Parameter]
+    public string MaNV { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployee();
+    }
+
+    private async Task LoadEmployee()
+    {
+        try
+        {
+            // Lấy thông tin nhân viên từ service dựa trên mã nhân viên
+            employee = await thietlapservices.GetEmployeeInfo(MaNV);
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi khi không thể tải thông tin nhân viên
+            Console.WriteLine($"Lỗi: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateEmployee()
+    {
+        try
+        {
+            // Gọi service để cập nhật thông tin nhân viên
+            await JSRuntime.InvokeAsync<object>("alert", "Thông tin nhân viên đã được cập nhật.");
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi khi không thể cập nhật thông tin nhân viên
+            Console.WriteLine($"Lỗi: {ex.Message}");
+            await JSRuntime.InvokeAsync<object>("alert", "Đã xảy ra lỗi khi cập nhật thông tin nhân viên.");
+        }
+    }
+}

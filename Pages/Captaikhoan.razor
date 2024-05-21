@@ -1,0 +1,514 @@
+﻿@page "/captaikhoan"
+
+@using Microsoft.JSInterop
+@using FullProject.Model
+@using FullProject.Repo
+@inject AccountRepository _accountRepository
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+
+<PageTitle>Bảng lương</PageTitle>
+
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="custom.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="waypoints.min.js"></script>
+    <script src="js1.js"></script>
+    <script src="bt4.js"></script>
+</HeadContent>
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+
+    .form-control {
+        background-color: white;
+
+    }
+
+    .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+</style>
+<div class="container-fluid position-relative d-flex p-0"
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                    <div class="dropdown-menu bg-transparent border-0 ">
+                        <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+                        <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                        <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                    </div>
+                </div>
+
+                @if (user_role == "Cap 5" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                {
+                            <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                    <div class="dropdown-menu bg-transparent border-0 ">
+                        <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                        <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                    </div>
+                </div>
+                        <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+            <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                @* <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div> *@
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+
+                        <a href="/" class="dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+
+        <!-- Container for messages -->
+        <div id="messageContainer">
+            @if (isError)
+            {
+                    <div style="background-color: lightcoral; padding: 10px; text-align: center;">
+                    @errorMessage
+                    </div>
+            }
+            @if (isSuccess)
+            {
+                    <div style="background-color: lightgreen; padding: 10px; text-align: center;">
+                    @successMessage
+                    </div>
+            }
+        </div>
+
+
+        <div class="acc">
+                <div class="container-fluid pt-4 px-4">
+                    <div class="bg-white text-left rounded p-4">
+
+                        <div class="tab-content" id="nav-tabContent">
+                            <div class="tab-pane fade show active" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+                                <br><div class="d-flex align-items-center justify-content-between mb-4">
+                                    <h5 class="mb-0 text-dark">Cấp tài khoản</h5>
+                                </div>
+                                <form class="row g-3 needs-validation" id="formProduct">
+                                    <div class="col-md-6">
+                                        <div class="text-center mt-5">
+                                            <!-- File upload handling -->
+                                            <img alt="Admin1" src="css/image/user.svg" class="rounded-circle img-responsive mt-2" width="128" height="128">
+                                            <div class="mt-2">
+@*                                                 <input type="file" id="fileInput" accept="image/*" style="display: none;" @onchange="HandleFileUpload">
+                                                <label for="fileInput" id="labelInput" class="btn btn-primary">
+                                                    <i class="fas fa-upload"></i> Upload
+                                                </label> *@
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <!-- Username field -->
+                                        <div class="col-md-12">
+                                            <label for="inputUsername" class="form-label">Tên tài khoản</label>
+                                            <input type="text" class="form-control bg-white" id="inputUsername" @bind="tenTaiKhoan" required>
+                                        </div>
+
+                                        <!-- Password field -->
+                                        <div class="col-md-12">
+                                            <label for="inputPassword" class="form-label">Mật khẩu</label>
+                                            <input type="text" class="form-control bg-white" id="inputPassword" @bind="matKhau" required>
+                                        </div>
+
+                                        <!-- MaNV field -->
+                                        <div class="col-md-12">
+                                            <label for="inputId" class="form-label">Mã nhân viên</label>
+                                            <input type="text" class="form-control bg-white" id="inputId" @bind="maNV" required>
+                                        </div>
+
+                                        <!-- Role dropdown -->
+                                        <div class="col-md-12">
+                                            <label for="validationCustom02" class="form-label">Phân quyền</label>
+                                            <select class="form-select bg-white" id="validationCustom02" @bind="role" required>
+                                                <option value="Cap 6">Quản lý bảng công</option>
+                                                <option value="Cap 5">Quản lý nhân viên</option>
+                                                <option value="Cap 4">Quản lý lương</option>
+                                                <option value="Cap 3">Quản lý nhân viên, bảng công</option>
+                                                <option value="Cap 2">Quản lý nhân viên, bảng công, lương</option>
+                                                <option value="Cap 1">Quản lý nhân viên, bảng công, lương, tài khoản</option>
+                                            </select><br>
+                                        </div>
+
+                                        <!-- Buttons for creating or updating the account -->
+                                        <div class="mb-3 text-center">
+                                            <button class="btn btn-primary" type="button" @onclick="CreateAccount">Thêm mới</button>
+                                            <button class="btn btn-primary" type="button" onclick="updateUsername()">Cập nhật</button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        <!-- Account management table -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-white text-center rounded p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h5 class="mb-0 text-dark">Tài khoản</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table text-center text-dark align-middle table-bordered table-hover mb-0" id="table">
+                        <thead>
+                            <tr class="text-dark">
+                                <th scope="col">Mã nhân viên</th>
+                                <th scope="col">Tên tài khoản</th>
+                                <th scope="col">Mật khẩu</th>
+                                <th scope="col">Phân quyền</th>
+                                <th scope="col">Tác vụ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var account in TaiKhoanList)
+                            {
+            <tr>
+                <td>@account.MaNV</td>
+                <td>@account.TenTaiKhoan</td>
+                <td>
+                                        @if (IsEditing(account, "MatKhau"))
+                                        {
+                            <input type="text" class="form-control" @bind="account.MatKhau" />
+                                        }
+                                        else
+                                        {
+                                            @account.MatKhau
+                                        }
+                </td>
+                <td>
+                                        @if (IsEditing(account, "Role"))
+                                        {
+                                            <select class="form-select bg-white" @bind="temp_role">
+                                                <option value="Cap 6">Quản lý bảng công</option>
+                                                <option value="Cap 5">Quản lý nhân viên</option>
+                                                <option value="Cap 4">Quản lý lương</option>
+                                                <option value="Cap 3">Quản lý nhân viên, bảng công</option>
+                                                <option value="Cap 2">Quản lý nhân viên, bảng công, lương</option>
+                                                <option value="Cap 1">Quản lý nhân viên, bảng công, lương, tài khoản</option>
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            @GetRoleDisplayName(account.Role)
+                                        }
+                </td>
+                <td>
+                                        @if (!IsEditing(account))
+                                        {
+                            <button type="button" class="btn btn-light" @onclick="() => StartEditing(account)">Edit</button>
+                            <span>
+                                <button type="button" class="btn btn-light" @onclick="() => DeleteAccount(account.MaNV)"><i class="fa fa-trash"></i></button>
+                            </span>
+                                        }
+                                        else
+                                        {
+                            <button type="button" class="btn btn-primary" @onclick="() => SaveChanges(account)">Save</button>
+                            <span>
+                                <button type="button" class="btn btn-secondary" @onclick="() => CancelEdit(account)">Cancel</button>
+                            </span>
+                                        }
+                </td>
+            </tr>
+                            }
+</tbody>
+
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Start -->
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="bg-secondary rounded-top p-4 bg-white">
+                <div class="row ">
+                    <div class="col-12 col-sm-6 text-center text-sm-start ">
+                            Copyright © 2024 Project - 22IT1 - CMC Uni.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+    </div>
+    <!-- Content End -->
+</div>
+
+<script>
+    window.editAccount = async function (account) {
+        // Assuming you want to prompt the user to edit the account details using a modal or form
+        // You can implement the logic to handle account editing here
+        // For demonstration purposes, let's just prompt the user to confirm editing and return the account object unchanged
+        var confirmEdit = confirm("Are you sure you want to edit this account?");
+        if (confirmEdit) {
+            return account;
+        } else {
+            return null; // Return null if the user cancels the edit operation
+        }
+    }
+</script>
+
+@code {
+
+    // Define properties to hold form input values
+    private string tenTaiKhoan;
+    private string matKhau;
+    private string maNV;
+    private string role;
+
+    private bool isSuccess;
+    private bool isError;
+    private string successMessage;
+    private string errorMessage;
+
+    private List<TaiKhoan> TaiKhoanList = new List<TaiKhoan>();
+    private Dictionary<string, bool> EditingState = new Dictionary<string, bool>();
+
+    private string user_role = null;
+
+    private string temp_role = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            //NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+            // Load data from the database when the component is initialized
+            await LoadTaiKhoanList();
+        }
+    }
+
+    private async Task LoadTaiKhoanList()
+    {
+        TaiKhoanList = await _accountRepository.GetAllTaiKhoanAsync();
+    }
+
+    private bool IsEditing(TaiKhoan account, string propertyName = null)
+    {
+        if (propertyName == null)
+        {
+            // Check if any property of the account is in editing mode
+            return EditingState.ContainsKey(account.MaNV) && EditingState[account.MaNV];
+        }
+        else
+        {
+            // Check if the specified property of the account is in editing mode
+            return EditingState.ContainsKey($"{account.MaNV}_{propertyName}") && EditingState[$"{account.MaNV}_{propertyName}"];
+        }
+    }
+
+    private void StartEditing(TaiKhoan account)
+    {
+        // Set editing mode for all properties of the account
+        EditingState[account.MaNV] = true;
+        EditingState[$"{account.MaNV}_MatKhau"] = true;
+        EditingState[$"{account.MaNV}_Role"] = true;
+        temp_role = account.Role;
+    }
+
+    private async Task SaveChanges(TaiKhoan account)
+    {
+        account.Role = temp_role;
+        await _accountRepository.UpdateAccountAsync(account);
+        // Reset editing mode for all properties of the account
+        EditingState[account.MaNV] = false;
+        EditingState[$"{account.MaNV}_MatKhau"] = false;
+        EditingState[$"{account.MaNV}_Role"] = false;
+        temp_role = null;
+        await LoadTaiKhoanList();
+    }
+
+    private async Task CancelEdit(TaiKhoan account)
+    {
+        // Reset editing mode for all properties of the account
+        EditingState[account.MaNV] = false;
+        EditingState[$"{account.MaNV}_TenTaiKhoan"] = false;
+        EditingState[$"{account.MaNV}_MatKhau"] = false;
+        EditingState[$"{account.MaNV}_Role"] = false;
+        temp_role = null;
+    }
+
+    private async Task DeleteAccount(string maNV)
+    {
+        var confirmDelete = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this account?");
+        if (confirmDelete)
+        {
+            // Delete the account from the database
+            await _accountRepository.DeleteAccountAsync(maNV);
+            // Refresh the list after deletion
+            await LoadTaiKhoanList();
+        }
+    }
+
+    // Define method to handle form submission
+    private async Task CreateAccount()
+    {
+        isSuccess = false;
+        isError = false;
+        // Check if the MaNV exists in the database
+        bool maNVExists = await _accountRepository.ManvExistsAsync(maNV);
+        bool tenTaiKhoanExists = await _accountRepository.TenTaiKhoanExistsAsync(tenTaiKhoan);
+        if (!maNVExists)
+        {
+            isError = true;
+            errorMessage = "Mã nhân viên không tồn tại.";
+            return;
+        }
+        else if (tenTaiKhoanExists)
+        {
+            isError = true;
+            errorMessage = "Tài khoản đã tồn tại";
+            return;
+        }
+        else
+        {
+            // Create a new TaiKhoan object with the form values
+            var newAccount = new TaiKhoan
+                {
+                    TenTaiKhoan = tenTaiKhoan,
+                    MatKhau = matKhau,
+                    MaNV = maNV,
+                    Role = role
+                };
+
+            // Register the new account using the account repository
+            await _accountRepository.RegisterAccountAsync(newAccount);
+
+            isSuccess = true;
+            successMessage = "Tạo tài khoản thành công.";
+
+            // Handle success case (e.g., show success message or navigate away)
+            tenTaiKhoan = "";
+            matKhau = "";
+            maNV = "";
+            role = "";
+            await LoadTaiKhoanList();
+        }
+    }
+
+    private string GetRoleDisplayName(string roleCode)
+    {
+        return roleCode switch
+        {
+            "Cap 1" => "Quản lý bảng công, nhân viên, lương, và tài khoản",
+            "Cap 2" => "Quản lý lương, nhân viên, bảng công",
+            "Cap 3" => "Quản lý nhân viên, bảng công",
+            "Cap 4" => "Quản lý lương",
+            "Cap 5" => "Quản lý nhân viên",
+            "Cap 6" => "Quản lý bảng công",
+            _ => "Chưa có cấp"
+        };
+    }
+
+    private string GetRoleCode(string roleDisplayName)
+    {
+        return roleDisplayName switch
+        {
+            "Quản lý bảng công, nhân viên, lương, và tài khoản" => "Cap 1",
+            "Quản lý lương, nhân viên, bảng công" => "Cap 2",
+            "Quản lý nhân viên, bảng công" => "Cap 3",
+            "Quản lý lương" => "Cap 4",
+            "Quản lý nhân viên" => "Cap 5",
+            "Quản lý bảng công" => "Cap 6",
+            _ => "Unknown"
+        };
+    }
+
+
+    // Add methods to handle input change events and file uploads
+    private void HandleFileUpload() { /* Handle file upload */ }
+}

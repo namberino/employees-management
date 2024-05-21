@@ -1,0 +1,351 @@
+﻿@page "/"
+
+@using System.Security.Claims
+@inject NavigationManager Navigation
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@using System.Text.Json
+@using FullProject.Model
+@using FullProject.Repo
+@inject AccountRepository _accountRepository
+@inject IAuthenticationService AuthService
+
+<PageTitle>Đăng nhập</PageTitle>
+
+<style>
+    body {
+        background-color: white;
+    }
+
+    .card {
+        border: none;
+    }
+
+    .login-text {
+        color: orange;
+        font-weight: bold;
+    }
+
+    .black-bg {
+        background-color: white;
+    }
+
+    .card-body {
+        background-color: lightgray;
+    }
+
+    .form-group input {
+        background-color: white;
+        border: none;
+        color: #1a1a1a;
+    }
+
+        .form-group input:focus {
+            background-color: white;
+            color: #1a1a1a;
+        }
+
+    .login-button {
+        background-color: orange;
+        margin-left: 11px;
+        margin-right: 5px;
+        width: 92%;
+        border: none;
+    }
+
+        .login-button:hover {
+            background-color: #cc6600;
+        }
+
+    .switch-button {
+        color: orange;
+        border: none;
+    }
+
+        .switch-button:hover {
+            color: #cc6600;
+        }
+
+    .login-container {
+        margin-top: 100px;
+    }
+
+    .account-text {
+        color: #1a1a1a;
+    }
+
+    .form-group {
+        margin-top: 10px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .form-control {
+        height: 50px;
+        border: none;
+    }
+
+    .remember-me-label {
+        color: #1a1a1a;
+    }
+</style>
+
+<div class="container mt-6 login-container">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    @if (IsLogin)
+                    {
+                        <h3 class="card-title text-center login-text">Login</h3>
+
+                        @if (ErrorMessage != null)
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @ErrorMessage
+                            </div>
+                        }
+
+                        <form>
+                            <div class="form-group">
+                                <input type="text" id="username" class="form-control" placeholder="Username" @bind="Username" @onfocus='() => TogglePlaceholderVisibility("username", false)' @onblur='() => TogglePlaceholderVisibility("username", string.IsNullOrWhiteSpace(Username))' />
+                            </div>
+
+                            <div class="form-group">
+                                <input type="password" id="password" class="form-control" placeholder="Password" @bind="Password" @onfocus='() => TogglePlaceholderVisibility("password", false)' @onblur='() => TogglePlaceholderVisibility("password", string.IsNullOrWhiteSpace(Username))' />
+                            </div>
+
+                            <div class="form-group form-check">
+                                <input type="checkbox" class="form-check-input" id="rememberMe" @bind="RememberMe" />
+                                <label class="form-check-label remember-me-label" for="rememberMe">Remember Me</label>
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-block login-button" @onclick="Login">Login</button>
+                        </form>
+
+                        <p class="text-center mt-3 account-text">Don't have an account?<button type="button" class="btn btn-link btn-sm switch-button" @onclick="SwitchToRegister">Register</button></p>
+                    }
+                    else
+                    {
+                        <h3 class="card-title text-center login-text">Register</h3>
+
+                        <form>
+                            <div class="form-group">
+                                @* <label for="name">Name:</label> *@
+                                <input type="text" id="name" class="form-control" placeholder="Name" @bind="Name" @onfocus='() => TogglePlaceholderVisibility("name", false)' @onblur='() => TogglePlaceholderVisibility("name", string.IsNullOrWhiteSpace(Username))' />
+                            </div>
+
+                            <div class="form-group">
+                                @* <label for="email">Email:</label> *@
+                                <input type="email" id="email" class="form-control" placeholder="Ma NV" @bind="Manv" @onfocus='() => TogglePlaceholderVisibility("manv", false)' @onblur='() => TogglePlaceholderVisibility("manv", string.IsNullOrWhiteSpace(Username))' />
+                            </div>
+
+                            <div class="form-group">
+                                @* <label for="newpassword">Password:</label> *@
+                                <input type="password" id="newpassword" class="form-control" placeholder="Password" @bind="NewPassword" @onfocus='() => TogglePlaceholderVisibility("newpassword", false)' @onblur='() => TogglePlaceholderVisibility("newpassword", string.IsNullOrWhiteSpace(Username))' />
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-block login-button" @onclick="Register">Register</button>
+                        </form>
+
+                        <p class="text-center mt-3 account-text">Already have an account?<button type="button" class="btn btn-link btn-sm switch-button" @onclick="SwitchToLogin">Login</button></p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool IsLogin = true;
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private string Name { get; set; }
+    private string Manv { get; set; }
+    private string NewPassword { get; set; }
+    private string ErrorMessage { get; set; }
+    private bool RememberMe { get; set; }
+    public bool IsAuthenticated = false;
+
+    private Dictionary<string, bool> PlaceholderVisibleStates = new Dictionary<string, bool>()
+{
+        { "username", true },
+        { "password", true },
+        { "name", true },
+        { "manv", true },
+        { "newpassword", true }
+    };
+
+    public string GenerateFiveDigitString()
+    {
+        Random random = new Random();
+        string result = string.Empty;
+
+        for (int i = 0; i < 5; i++)
+        {
+            int randomDigit = random.Next(0, 10); // Generates a random digit between 0 and 9
+            result += randomDigit.ToString(); // Append the digit to the result string
+        }
+
+        return result;
+    }
+
+    [Inject]
+    private HttpClient httpClient { get; set; }
+
+    private async Task Login()
+    {
+        var request = new LoginModel
+            {
+                username = Username,
+                password = Password
+            };
+
+        var response = await httpClient.PostAsJsonAsync("https://projhoaggg21555-001-site1.anytempurl.com/api/Auth/login", request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Authentication successful
+            var content = await response.Content.ReadAsStringAsync();
+            if (content.StartsWith("{"))
+            {
+                var responseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(content);
+                if (responseObject.ContainsKey("message") && responseObject["message"] == "Login successful" && responseObject.ContainsKey("token"))
+                {
+                    Console.WriteLine("Login good");
+                    string token = responseObject["token"];
+                    string encodedToken = System.Net.WebUtility.UrlEncode(token);
+
+                    // Call ValidateToken API to get user information
+                    var validateResponse = await httpClient.GetAsync($"https://projhoaggg21555-001-site1.anytempurl.com/api/Auth/ValidateToken?token={encodedToken}");
+                    if (validateResponse.IsSuccessStatusCode)
+                    {
+
+                        Console.WriteLine("Token validating");
+                        var validateContent = await validateResponse.Content.ReadAsStringAsync();
+                        var validateObject = JsonSerializer.Deserialize<Dictionary<string, string>>(validateContent);
+                        if (validateObject["message"] == "Token is valid")
+                        {
+                            Console.WriteLine("Token is good");
+                            string username = validateObject["username"];
+                            string role = validateObject["role"];
+
+                            // Set authentication status and user information
+                            AuthService.SetAuthenticated(true, username, role);
+
+                            // Save token in session storage
+                            await SetTokenInSessionStorage(token);
+
+                            // Navigate to home page
+                            Navigation.NavigateTo("/trangchu", true);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    AuthService.SetAuthenticated(false, "", "");
+                    ErrorMessage = "Invalid login data";
+                }
+            }
+            else
+            {
+                AuthService.SetAuthenticated(false, "", "");
+                ErrorMessage = content;
+            }
+        }
+        else
+        {
+            AuthService.SetAuthenticated(false, "", "");
+            ErrorMessage = "An error occurred while processing your request.";
+        }
+    }
+
+    private async Task Register()
+    {
+        var request = new TaiKhoan
+            {
+                TenTaiKhoan = Name,
+                MatKhau = NewPassword,
+                MaNV = Manv,
+                Role = "Cap 6" // Assign appropriate role
+            };
+
+        var response = await httpClient.PostAsJsonAsync("https://projhoaggg21555-001-site1.anytempurl.com/api/Auth/register", request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            if (content.StartsWith("{"))
+            {
+                var responseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(content);
+                if (responseObject.ContainsKey("message") && responseObject["message"] == "Registration successful" && responseObject.ContainsKey("token"))
+                {
+                    string token = responseObject["token"];
+                    string encodedToken = System.Net.WebUtility.UrlEncode(token);
+
+                    // Call ValidateToken API to get user information
+                    var validateResponse = await httpClient.GetAsync($"https://projhoaggg21555-001-site1.anytempurl.com/api/Auth/ValidateToken?token={encodedToken}");
+                    if (validateResponse.IsSuccessStatusCode)
+                    {
+                        var validateContent = await validateResponse.Content.ReadAsStringAsync();
+                        var validateObject = JsonSerializer.Deserialize<Dictionary<string, string>>(validateContent);
+                        if (validateObject["message"] == "Token is valid")
+                        {
+                            string username = validateObject["username"];
+                            string role = validateObject["role"];
+
+                            // Set authentication status and user information
+                            AuthService.SetAuthenticated(true, username, role);
+
+                            // Save token in session storage
+                            await SetTokenInSessionStorage(token);
+                            Name = "";
+                            Manv = "";
+                            NewPassword = "";
+
+                            // Navigate to home page
+                            Navigation.NavigateTo("/trangchu", true);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    AuthService.SetAuthenticated(false, "", "");
+                    ErrorMessage = "Registration invalid";
+                }
+            }
+            else
+            {
+                AuthService.SetAuthenticated(false, "", "");
+                ErrorMessage = content;
+            }
+        }
+        else
+        {
+            AuthService.SetAuthenticated(false, "", "");
+            ErrorMessage = "An error occurred while processing your request.";
+        }
+    }
+
+    private async Task SetTokenInSessionStorage(string token)
+    {
+        // Call JavaScript function to set token in sessionStorage
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "token", token);
+    }
+
+    private void SwitchToRegister()
+    {
+        IsLogin = false;
+    }
+
+    private void SwitchToLogin()
+    {
+        IsLogin = true;
+    }
+
+    private void TogglePlaceholderVisibility(string fieldId, bool isVisible)
+    {
+        PlaceholderVisibleStates[fieldId] = isVisible;
+    }
+}

@@ -1,0 +1,97 @@
+﻿@typeparam TEntity
+@using FullProject.Model
+@using FullProject.Pages
+@using Microsoft.JSInterop
+@using FullProject.Services
+@inject IJSRuntime JSRuntime
+@inject BangCongService BangCongService;
+@inject FullProject.Services.BangCongService BangCongService
+<div class="text-center rounded p-4 bg-white">
+    <form class="row g-4 needs-validation text-dark" id="formDealer" novalidate @onsubmit:preventDefault>
+        <div class="col-md-6">
+            <span><input class="form-control bg-white border-1 col-md-4" id="search-box" type="search" placeholder="Search" @bind="searchItem"></span>
+            <span class="text-danger" id="validation-error"></span>
+        </div>
+        <div class="col-md-6">
+            <select class="form-select bg-white" id="validationCustom02" @bind="selectedJobTitle" required >
+                <option>Chức vụ</option>
+                <option>Chủ tịch</option>
+                <option>Giám đốc</option>
+                <option>Phó Giám đốc</option>
+                <option>Trưởng phòng</option>
+                <option>Phó phòng</option>
+                <option>Nhân viên</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <select class="form-select bg-white" id="validationCustom02" @bind="selectedDepartment" required>
+                <option>Phòng ban</option>
+                <option>Phòng Nhân sự - Tài vụ</option>
+                <option>Phòng Nghiên cứu và phát triển</option>
+                <option>Phòng Kinh doanh</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <select class="form-select bg-white" id="validationCustom02" @bind="thangChamCong" required>
+                <option>mm/yyyy</option>
+                <option>04/2024</option>
+                <option>03/2024</option>
+                <option>02/2024</option>
+                <option>01/2024</option>
+                <option>12/2023</option>
+
+            </select>
+        </div>
+
+        <div class=" text-center">
+            <button  class="btn btn-primary"  id="searchButton" type="button" @onclick="OnSearchClicked">Tìm kiếm</button>
+            <button id="hidden-button" style="display: none;">Hidden Button</button>
+        </div>
+	</form><br />
+</div>
+<script src="js/custom.js"></script>
+@code {
+    [Parameter]
+    public List<TEntity> NhanViens { get; set; }
+    //[Parameter]
+    //public EventCallback<string> OnSearch { get; set; }
+    [Parameter]
+    //public EventCallback<String> OnSearch { get; set; }
+    public EventCallback<SearchCriteria> OnSearch { get; set; }
+
+    private string searchItem { get; set; }
+    private string selectedJobTitle { get; set; } // For future job title filtering
+    private string selectedDepartment { get; set; } // For future department filtering
+    private string thangChamCong { get; set; } // For future department filtering
+
+    //private List<PhongBan> PhongBans { get; set; } = new List<PhongBan>(); // Initialize empty list
+
+ 
+
+    //protected override async Task OnInitializedAsync()
+    //{
+    //    PhongBans = await BangCongService.GetAllPhongBans(); // Call service method to get departments
+    //}
+
+    private async Task OnSearchClicked()
+    {
+        var searchCriteria = new SearchCriteria()
+        {
+           SearchTerm = searchItem,
+           SelectedJobTitle = selectedJobTitle,
+           SelectedDepartment = selectedDepartment,
+           ThangChamCong = thangChamCong
+        };
+        await OnSearch.InvokeAsync(searchCriteria);
+    }
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await JSRuntime.InvokeVoidAsync("searchButtonClick");
+        }
+    }
+}
+

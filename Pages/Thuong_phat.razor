@@ -1,0 +1,960 @@
+﻿@page "/thuong_phat"
+
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+<PageTitle>Bảng lương</PageTitle>
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+
+    .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+</style>
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="custom.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="waypoints.min.js"></script>
+    <script src="js1.js"></script>
+    <script src="bt4.js"></script>
+</HeadContent>
+
+<div class="container-fluid position-relative d-flex p-0"
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 6" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                            <div class="dropdown-menu bg-transparent border-0 ">
+                                <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+
+                                <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                                <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                            </div>
+                    }
+                </div>
+
+                @if (user_role == "Cap 5" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                {
+                        <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 4" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                            <a class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                            <div class="dropdown-menu bg-transparent border-0 show">
+                                <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                                <a href="thuong_phat" class="dropdown-item active" id="drop22">Bảng thưởng/phạt</a>
+                            </div>
+                    }
+                </div>
+                <div class="navbar-nav w-100">
+                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                            <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+            <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+               @*  <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div> *@
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+
+                        <a href="/" class="dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="text-left rounded p-4 bg-white">
+                <b><h3 class="text-dark">Bảng thưởng/phạt</h3></b>
+            </div>
+        </div>
+
+         <div class="container-fluid pt-4 px-4">
+            <div class="bg-white text-left rounded p-4">
+                <form class="row g-4 needs-validation text-dark" id="formDealer" novalidate>
+                    <div class="col-md-3">
+                        <label for="validationCustom01" class="form-label">Mã nhân viên</label>
+                        <input type="text" class="form-control bg-white" style="font-weight: @inputFontWeight; color: @inputColor" id="MaNhanVienInput" disabled="@DisabledInputId" @bind="maNhanVien" @onblur="ChecknLoad" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="validationCustom02" class="form-label">Loại</label>
+                        <select class="form-select bg-white text-dark" id="inputType" @bind="loai" required>
+                            <option></option>
+                            <option>Thưởng</option>
+                            <option>Phạt</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="validationCustom04" class="form-label">Số tiền</label>
+                        <input type="number" class="form-control bg-white text-dark" id="inputMoney" @bind="soTien" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="validationCustom04" class="form-label">Ngày</label>
+                        <input type="date" class="form-control bg-white text-dark" id="inputDate" @bind="ngay" required>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="validationCustom04" class="form-label">Lý do</label>
+                        <input type="text" class="form-control bg-white text-dark" id="inputReason" @bind="nguon" required>
+                    </div>
+                    <div class="mb-3 text-center">
+                        <button class="btn btn-primary" type="button" id="searchButton" disabled="@IsDisabledSearch" @onclick="Search">@buttonText</button>
+                        <button class="btn btn-primary ms-5" type="button" id="createButton" disabled="@IsDisabledAdd" @onclick="ThemThuongPhat">Nhập liệu</button>
+                        <button class="btn btn-primary ms-5" type="button" id="updateButton" disabled="@IsDisabledUpdate" @onclick="CapNhatSua">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="container-fluid pt-4 px-4">
+                <div class="bg-white text-center rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="mb-0 text-dark">Thưởng</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table text-center text-dark align-middle table-bordered table-hover mb-0" id="table1">
+                            <thead>
+                                <tr class="text-dark">
+                                    <th scope="col">Mã nhân viên</th>
+                                    <th scope="col">Tên nhân viên</th>
+                                    <th scope="col">Ngày</th>
+                                    <th scope="col">Số tiền</th>
+                                    <th scope="col">Lý do</th>
+                                    <th scope="col">Tác vụ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var tlap in thuongList)
+                            {
+                                        <tr>
+                                            <td>@tlap.MaNV</td>
+                                            <td>@tlap.HoTen</td>
+                                            <td>@tlap.Ngay.ToShortDateString()</td>
+                                            <td>@tlap.SoTien</td>
+                                            <td>@tlap.NguonThuongPhat</td>
+                                            <td>
+                                                <button type="button" id="editButton" class="btn btn-light" disabled="@(!IsDisabledUpdate)" @onclick='() => BamNutSua(tlap.MaTP, "Thưởng", 1)'><i class="fa fa-pen"></i></button>
+                                                <span><button type="button" class="btn btn-light" disabled="@(!IsDisabledUpdate)" @onclick='() => XoaThuongPhat(tlap.MaTP, "T")'><i class="fa fa-trash"></i></button></span>
+                                            </td>
+                                        </tr>
+                            }
+                            </tbody>
+                        </table>
+
+                        <!-- Giới hạn số lượng bản ghi Thưởng -->
+                        <div class="col-12 col-sm-3 text-center text-sm-start mx-auto pt-4 px-4">
+                            <tfoot >
+                                <tr>
+                                    <td style="margin-left:50px">
+                                        <nav aria-label="Page navigation">
+                                            <ul class="pagination justify-content-center">
+                                                <li class="page-item @(!HasPreviousPage_Thuong() ? "disabled" : "")">
+                                                    <button class="page-link" disabled="@(!HasPreviousPage_Thuong())" @onclick="() => GoToPage_Thuong(CurrentPageT - 1)">Previous</button>
+                                                </li>
+                                            @if (totalPagesT <= 5)
+                                            {
+                                                for (int i = 1; i <= totalPagesT; i++)
+                                                {
+                                                                        <li class="page-item @(IsCurrentPage_Thuong(i) ? "active" : "")">
+                                                                                            <i class="page-link" >@i</i>
+                                                                        </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (CurrentPageT <= 3)
+                                                {
+                                                    for (int i = 1; i <= 5; i++)
+                                                    {
+                                                                                    <li class="page-item @(IsCurrentPage_Thuong(i) ? "active" : "")">
+                                                                                        <i class="page-link ">@i</i>
+                                                                                    </li>
+                                                    }
+                                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                                else if (CurrentPageT >= totalPagesT - 2)
+                                                {
+                                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = totalPagesT - 4; i <= totalPagesT; i++)
+                                                    {
+                                                                                    <li class="page-item @(IsCurrentPage_Thuong(i) ? "active" : "")">
+                                                                                        <i class="page-link">@i</i>
+                                                                                    </li>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = CurrentPageT - 2; i <= CurrentPageT + 2; i++)
+                                                    {
+                                                                                    <li class="page-item @(IsCurrentPage_Thuong(i) ? "active" : "")">
+                                                                                        <i class="page-link" > </i>
+                                                                                    </li>
+                                                    }
+                                                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                            }
+                                                <li class="page-item @(!HasNextPage_Thuong() ? "disabled" : "")">
+                                                    <button class="page-link" disabled="@(!HasNextPage_Thuong())" @onclick="() => GoToPage_Thuong(CurrentPageT + 1)">Next</button>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-white text-center rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="mb-0 text-dark">Phạt</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table text-center text-dark align-middle table-bordered table-hover mb-0" id="table2">
+                            <thead>
+                                <tr class="text-dark">
+                                    <th scope="col">Mã nhân viên</th>
+                                    <th scope="col">Tên nhân viên</th>
+                                    <th scope="col">Ngày</th>
+                                    <th scope="col">Số tiền</th>
+                                    <th scope="col">Lý do</th>
+                                    <th scope="col">Tác vụ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var tlap in phatList)
+                            {
+                                        <tr>
+                                            <td>@tlap.MaNV</td>
+                                            <td>@tlap.HoTen</td>
+                                            <td>@tlap.Ngay.ToShortDateString()</td>
+                                            <td>@tlap.SoTien</td>
+                                            <td>@tlap.NguonThuongPhat</td>
+                                            <td>
+                                                <button type="button" id="editButton" class="btn btn-light"  disabled="@(!IsDisabledUpdate)" @onclick='() => BamNutSua(tlap.MaTP, "Phạt", 2)'><i class="fa fa-pen"></i></button>
+                                                <span><button type="button" class="btn btn-light"  disabled="@(!IsDisabledUpdate)" @onclick='() => XoaThuongPhat(tlap.MaTP, "P")'><i class="fa fa-trash"></i></button></span>
+                                            </td>
+                                        </tr>
+                            }
+                            </tbody>
+                        </table>
+
+                        <!-- Giới hạn số lượng bản ghi -->
+                        <div class="col-12 col-sm-3 text-center text-sm-start mx-auto pt-4 px-4">
+                            <tfoot >
+                                <tr>
+                                    <td style="margin-left:50px">
+                                        <nav aria-label="Page navigation">
+                                            <ul class="pagination justify-content-center">
+                                                <li class="page-item @(!HasPreviousPage_Phat() ? "disabled" : "")">
+                                                    <button class="page-link" disabled="@(!HasPreviousPage_Phat())" @onclick="() => GoToPage_Phat(CurrentPageP- 1)">Previous</button>
+                                                </li>
+                                            @if (totalPagesP <= 5)
+                                            {
+                                                for (int i = 1; i <= totalPagesP; i++)
+                                                {
+                                                                                <li class="page-item @(IsCurrentPage_Phat(i) ? "active" : "")">
+                                                                                                    <i class="page-link" >@i</i>
+                                                                                </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (CurrentPageP <= 3)
+                                                {
+                                                    for (int i = 1; i <= 5; i++)
+                                                    {
+                                                                                                <li class="page-item @(IsCurrentPage_Phat(i) ? "active" : "")">
+                                                                                                    <i class="page-link ">@i</i>
+                                                                                                </li>
+                                                    }
+                                                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                                else if (CurrentPageP >= totalPagesP - 2)
+                                                {
+                                                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = totalPagesP - 4; i <= totalPagesP; i++)
+                                                    {
+                                                                                                <li class="page-item @(IsCurrentPage_Phat(i) ? "active" : "")">
+                                                                                                    <i class="page-link">@i</i>
+                                                                                                </li>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = CurrentPageP - 2; i <= CurrentPageP + 2; i++)
+                                                    {
+                                                                                                <li class="page-item @(IsCurrentPage_Phat(i) ? "active" : "")">
+                                                                                                    <i class="page-link" > </i>
+                                                                                                </li>
+                                                    }
+                                                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                            }
+                                                <li class="page-item @(!HasNextPage_Phat() ? "disabled" : "")">
+                                                    <button class="page-link" disabled="@(!HasNextPage_Phat())" @onclick="() => GoToPage_Phat(CurrentPageP + 1)">Next</button>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+        <!-- Footer Start -->
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="bg-secondary rounded-top p-4 bg-white">
+                <div class="row ">
+                    <div class="col-12 col-sm-6 text-center text-sm-start ">
+                        Copyright © 2024 Project - 22IT1 - CMC Uni.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+    </div>
+    <!-- Content End -->
+
+</div>
+<script>
+        window.scrollToElement = function (elementId) {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+                window.scrollTo({ top: 0, behavior: "smooth" }); // Cuộn đến đầu trang nếu phần tử không tồn tại
+            }
+        };
+</script>
+
+@using FullProject.Model;
+@using FullProject.Services;
+@using System.Data.SqlClient
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
+@using Microsoft.JSInterop
+@inject ThietLapService thietlapservices;
+@inject FullProject.Data.ThietLapContext thietLapContext
+@using Microsoft.EntityFrameworkCore;
+@using static FullProject.Services.ThietLapService
+@inject IJSRuntime JSRuntime
+
+@code {
+    private string user_role = null;
+
+    // Hàm override OnInitializedAsync để gọi hàm GetThuong và gán kết quả cho thuongphatList khi trang được khởi tạo
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+        }
+
+        // Gọi hàm GetThuong từ ThietLapService để lấy danh sách thưởng/phạt
+        thuongList = await thietlapservices.GetThuong();
+        phatList = await thietlapservices.GetPhat();
+
+        await LoadData_Thuong();
+        await LoadData_Phat();
+    }
+
+    // Biến lưu trnạg thái nút
+    private bool IsDisabledAdd = false;
+    private bool IsDisabledSearch = false;
+    private bool IsDisabledUpdate = true;
+    private bool DisabledInputId = false;
+
+    private string buttonText = "Tìm kiếm";
+    private string inputColor = "black"; // Màu chữ mặc định
+    private string inputFontWeight = "normal"; // Font chữ mặc định
+
+    // Hiển thị danh sách thưởng/phạt
+    // Biến để lưu danh sách thưởng/phạt
+    List<ThuongPhatWithNhanVienInfo> thuongList = new List<ThuongPhatWithNhanVienInfo>();
+    List<ThuongPhatWithNhanVienInfo> phatList = new List<ThuongPhatWithNhanVienInfo>();
+
+    List<ThuongPhatWithNhanVienInfo> thuongListSearch = new List<ThuongPhatWithNhanVienInfo>();
+    List<ThuongPhatWithNhanVienInfo> phatListSearch = new List<ThuongPhatWithNhanVienInfo>();
+
+
+    // Thêm thưởng/phạt
+    // Biến để lưu thông tin từ form
+    private int maTPCanSua;
+    private string maNhanVien;
+    private DateTime ngay = DateTime.Now;
+    private string nguon;
+    private decimal soTien;
+    private string loai;
+
+    // Hàm để thêm thưởng/phạt mới
+    private async Task ThemThuongPhat()
+    {
+        bool tonTai = await thietlapservices.KiemTraMaNhanVienTonTai(maNhanVien);
+        if (!tonTai)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Mã nhân viên không tồn tại");
+            return;
+        }
+
+        if (soTien.GetType() != typeof(decimal))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lương nhập sai kiểu dữ liệu");
+            return;
+        }
+
+        if (soTien <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Số tiền phải lớn hơn 0");
+            return;
+        }
+
+        // Gọi hàm từ ThietLapService để thêm dữ liệu vào bảng ThuongPhats
+        await thietlapservices.AddThuongPhat(maNhanVien, ngay, nguon, soTien, loai);
+
+        // Sau khi thêm thành công, làm những gì cần thiết, ví dụ: hiển thị thông báo thành công, làm mới form, v.v.
+        await JSRuntime.InvokeVoidAsync("alert", "Thêm thành công");
+
+        // Xóa các giá trị đã nhập trên form để chuẩn bị cho việc nhập mới
+        maNhanVien = "";
+        ngay = DateTime.Now;
+        nguon = "";
+        soTien = 0;
+        loai = "";
+
+        await OnInitializedAsync();
+    }
+
+    // Xóa thưởng/phạt
+    // Xóa thưởng/phạt từ danh sách thưởng/phạt hiện tại
+    private async Task XoaThuongPhat(int maTP, string loai)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa?");
+
+        if (confirmed)
+        {
+            if (loai == "T")
+            {
+                // Kiểm tra xem có tồn tại thưởng có mã tương ứng trong danh sách thưởng hay không
+                var thuongCanXoa = thuongList.FirstOrDefault(t => t.MaTP == maTP);
+                if (thuongCanXoa != null)
+                {
+                    // Gọi hàm từ ThietLapService để xóa thưởng từ cơ sở dữ liệu
+                    await thietlapservices.XoaThuongPhat(thuongCanXoa.MaTP);
+                    // Sau khi xóa thành công, làm mới danh sách thưởng
+                    thuongList.Remove(thuongCanXoa);
+                }
+            }
+            else if (loai == "P")
+            {
+                // Kiểm tra xem có tồn tại phạt có mã tương ứng trong danh sách phạt hay không
+                var phatCanXoa = phatList.FirstOrDefault(p => p.MaTP == maTP);
+                if (phatCanXoa != null)
+                {
+                    // Gọi hàm từ ThietLapService để xóa phạt từ cơ sở dữ liệu
+                    await thietlapservices.XoaThuongPhat(phatCanXoa.MaTP);
+                    // Sau khi xóa thành công, làm mới danh sách phạt
+                    phatList.Remove(phatCanXoa);
+                }
+            }
+        }
+    }
+
+    // Sửa thưởng/phạt
+    private void DoLenForm(int maTP)
+    {
+        // Tìm mục thưởng/phạt trong danh sách thưởng hoặc phạt dựa vào maTP
+        var thuong = thuongList.FirstOrDefault(t => t.MaTP == maTP);
+        if (thuong != null)
+        {
+            // Gán giá trị của mục thưởng/phạt vào các trường trên form
+            maNhanVien = thuong.MaNV;
+            ngay = thuong.Ngay;
+            nguon = thuong.NguonThuongPhat;
+            soTien = thuong.SoTien;
+            loai = "Thưởng"; // Đây là ví dụ, bạn cần thay đổi tùy theo cách bạn phân biệt thưởng và phạt
+            maTPCanSua = thuong.MaTP; // Lưu ID của mục thưởng/phạt đang chỉnh sửa
+        }
+        else
+        {
+            // Tương tự cho trường hợp nếu mục thưởng/phạt không tồn tại trong danh sách phạt
+            var phat = phatList.FirstOrDefault(p => p.MaTP == maTP);
+            if (phat != null)
+            {
+                // Gán giá trị của mục thưởng/phạt vào các trường trên form
+                maNhanVien = phat.MaNV;
+                ngay = phat.Ngay;
+                nguon = phat.NguonThuongPhat;
+                soTien = phat.SoTien;
+                loai = "Phạt"; // Đây là ví dụ, bạn cần thay đổi tùy theo cách bạn phân biệt thưởng và phạt
+                maTPCanSua = phat.MaTP; // Lưu ID của mục thưởng/phạt đang chỉnh sửa
+            }
+        }
+    }
+
+    private void XoaTamKhoiBangKhiNhanSua(int maTP, string loai)
+    {
+        if (loai == "Thưởng")
+        {
+            var thuongCanXoa = thuongList.FirstOrDefault(t => t.MaTP == maTP);
+            if (thuongCanXoa != null)
+            {
+                thuongList.Remove(thuongCanXoa);
+            }
+        }
+        else if (loai == "Phạt")
+        {
+            var phatCanXoa = phatList.FirstOrDefault(p => p.MaTP == maTP);
+            if (phatCanXoa != null)
+            {
+                phatList.Remove(phatCanXoa);
+            }
+        }
+    }
+
+    // Hàm thực hiện việc nhấn nút "sửa"
+    private async Task BamNutSua(int maTP, string loai, int tableNumber)
+    {
+        // Đổ dữ liệu vào form
+        DoLenForm(maTP);
+
+        // Tạm xóa dòng đó khỏi bảng
+        XoaTamKhoiBangKhiNhanSua(maTP, loai);
+
+        IsDisabledAdd = true;
+        IsDisabledSearch = true;
+        IsDisabledUpdate = false;
+
+        DisabledInputId = true;
+        inputColor = "#ff8000";
+        inputFontWeight = "bold";
+
+        // Cuộn lên đầu trang
+        // await JSRuntime.InvokeVoidAsync("scrollToTop");
+        await JSRuntime.InvokeVoidAsync("scrollToElement", "khoiDau");
+    }
+
+    // Bổ sung hàm CapNhatSua để cập nhật dữ liệu sau khi sửa
+    private async Task CapNhatSua()
+    {
+        bool tonTai = await thietlapservices.KiemTraMaNhanVienTonTai(maNhanVien);
+        if (!tonTai)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Mã nhân viên không tồn tại");
+            return;
+        }
+
+        if (soTien.GetType() != typeof(decimal))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lương nhập sai kiểu dữ liệu");
+            return;
+        }
+
+        if (soTien <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Số tiền phải lớn hơn 0");
+            return;
+        }
+
+        await thietlapservices.CapNhatThuongPhat(maTPCanSua, maNhanVien, ngay, nguon, soTien, loai);
+
+        // Hiển thị thông báo thành công
+        await JSRuntime.InvokeVoidAsync("alert", "Cập nhật thành công");
+
+        // Xóa các giá trị đã nhập trên form để chuẩn bị cho việc nhập mới
+        maNhanVien = "";
+        ngay = DateTime.Now;
+        nguon = "";
+        soTien = 0;
+        loai = "";
+
+        IsDisabledAdd = false;
+        IsDisabledSearch = false;
+        IsDisabledUpdate = true;
+
+        DisabledInputId = false;
+        inputColor = "black";
+        inputFontWeight = "normal";
+
+        // Cập nhật lại danh sách thưởng/phạt
+        await OnInitializedAsync();
+    }
+
+    // Tìm kiếm
+    private async Task Search()
+    {
+
+        if (string.IsNullOrEmpty(maNhanVien) && string.IsNullOrEmpty(nguon))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Vui lòng nhập thông tin tìm kiếm tìm kiếm");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(maNhanVien) && string.IsNullOrEmpty(nguon))
+        {
+            // Kiểm tra xem mã nhân viên có tồn tại không
+            bool tonTai = await thietlapservices.KiemTraMaNhanVienTonTai(maNhanVien);
+            if (!tonTai)
+            {
+                // Hiển thị thông báo cảnh báo nếu mã nhân viên không tồn tại
+                await JSRuntime.InvokeVoidAsync("alert", "Mã nhân viên không tồn tại");
+                return;
+            }
+
+            // Lấy danh sách thưởng/phạt với mã nhân viên được tìm kiếm
+            var filteredThuongList = await thietlapservices.GetThuong();
+            filteredThuongList = filteredThuongList.Where(tp => tp.MaNV == maNhanVien).ToList();
+
+            var filteredPhatList = await thietlapservices.GetPhat();
+            filteredPhatList = filteredPhatList.Where(tp => tp.MaNV == maNhanVien).ToList();
+
+            // Cập nhật danh sách thưởng/phạt trên giao diện
+            thuongList = filteredThuongList;
+            phatList = filteredPhatList;
+
+            // Sửa nội dung nút để chuyển trạng thái | TÌM KIẾM <=> HỦY TÌM KIẾM |
+            if (buttonText == "Tìm kiếm")
+            {
+                buttonText = "Hủy Tìm kiếm";
+                IsDisabledAdd = true;
+            }
+            else if (buttonText == "Hủy Tìm kiếm")
+            {
+                maNhanVien = "";
+                ngay = DateTime.Now;
+                nguon = "";
+                soTien = 0;
+                loai = "";
+
+                await OnInitializedAsync();
+
+                IsDisabledAdd = false;
+                buttonText = "Tìm kiếm";
+            }
+        }
+        else if (string.IsNullOrEmpty(maNhanVien) && !string.IsNullOrEmpty(nguon))
+        {
+            string nguonLower = nguon.ToLower();
+            // Lấy danh sách thưởng/phạt với mã nhân viên được tìm kiếm
+            var filteredThuongList = await thietlapservices.GetThuong();
+            filteredThuongList = filteredThuongList.Where(tp => tp.NguonThuongPhat.ToLower().Contains(nguonLower)).ToList();
+
+            var filteredPhatList = await thietlapservices.GetPhat();
+            filteredPhatList = filteredPhatList.Where(tp => tp.NguonThuongPhat.ToLower().Contains(nguonLower)).ToList();
+
+            // Cập nhật danh sách thưởng/phạt trên giao diện
+            thuongList = filteredThuongList;
+            phatList = filteredPhatList;
+
+            // Sửa nội dung nút để chuyển trạng thái | TÌM KIẾM <=> HỦY TÌM KIẾM |
+            if (buttonText == "Tìm kiếm")
+            {
+                buttonText = "Hủy Tìm kiếm";
+                IsDisabledAdd = true;
+            }
+            else if (buttonText == "Hủy Tìm kiếm")
+            {
+                maNhanVien = "";
+                ngay = DateTime.Now;
+                nguon = "";
+                soTien = 0;
+                loai = "";
+
+                await OnInitializedAsync();
+
+                IsDisabledAdd = false;
+                buttonText = "Tìm kiếm";
+            }
+        }
+        else if (!string.IsNullOrEmpty(maNhanVien) && !string.IsNullOrEmpty(nguon))
+        {
+            string nguonLower = nguon.ToLower();
+            // Lấy danh sách thưởng/phạt với mã nhân viên được tìm kiếm
+            var filteredThuongList = await thietlapservices.GetThuong();
+            filteredThuongList = filteredThuongList.Where(tp => tp.MaNV == maNhanVien).Where(tp => tp.NguonThuongPhat.ToLower().Contains(nguonLower)).ToList();
+
+            var filteredPhatList = await thietlapservices.GetPhat();
+            filteredPhatList = filteredPhatList.Where(tp => tp.MaNV == maNhanVien).Where(tp => tp.NguonThuongPhat.ToLower().Contains(nguonLower)).ToList();
+
+            // Cập nhật danh sách thưởng/phạt trên giao diện
+            thuongList = filteredThuongList;
+            phatList = filteredPhatList;
+
+            // Sửa nội dung nút để chuyển trạng thái | TÌM KIẾM <=> HỦY TÌM KIẾM |
+            if (buttonText == "Tìm kiếm")
+            {
+                buttonText = "Hủy Tìm kiếm";
+                IsDisabledAdd = true;
+            }
+            else if (buttonText == "Hủy Tìm kiếm")
+            {
+                maNhanVien = "";
+                ngay = DateTime.Now;
+                nguon = "";
+                soTien = 0;
+                loai = "";
+
+                await OnInitializedAsync();
+
+                IsDisabledAdd = false;
+                buttonText = "Tìm kiếm";
+            }
+        }
+        else
+        {
+            // Nếu mã nhân viên trống, hiển thị tất cả các dòng
+            thuongList = await thietlapservices.GetThuong();
+            phatList = await thietlapservices.GetPhat();
+
+        }
+    }
+
+    private async Task ChecknLoad()
+    {
+        if (string.IsNullOrEmpty(maNhanVien))
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+
+    // Giới hạn bản ghi Thưởng
+    public int CurrentPageT = 1;
+    public int PageSizeT = 5; // Số lượng bản ghi trên mỗi trang
+    int totalRecordsT;
+    public int totalPagesT = 0;
+
+    private async Task LoadData_Thuong()
+    {
+        if (thuongListSearch.Count == 0)
+        {
+            totalRecordsT = await thietlapservices.GetTotalRecordsThuong();
+            totalPagesT = (int)Math.Ceiling(totalRecordsT / (double)PageSizeT);
+
+            if (totalPagesT > 0)
+            {
+                if (CurrentPageT < 1) CurrentPageT = 1;
+                else if (CurrentPageT > totalPagesT) CurrentPageT = totalPagesT;
+
+                int skip = (CurrentPageT - 1) * PageSizeT;
+                thuongList = await thietlapservices.GetThuongPaged(skip, PageSizeT);
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+        else
+        {
+            totalRecordsT = thuongListSearch.Count;
+            totalPagesT = (int)Math.Ceiling(totalRecordsT / (double)PageSizeT);
+
+            if (totalPagesT > 0)
+            {
+                if (CurrentPageT < 1) CurrentPageT = 1;
+                else if (CurrentPageT > totalPagesT) CurrentPageT = totalPagesT;
+
+                int skip = (CurrentPageT - 1) * PageSizeT;
+                thuongList = thuongListSearch.Skip(skip).Take(PageSizeT).ToList();
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+
+        
+
+    }
+
+    // Các phương thức xử lý sự kiện phân trang
+    public async Task GoToPage_Thuong(int page)
+    {
+        CurrentPageT = page;
+        await LoadData_Thuong();
+    }
+
+    public bool IsCurrentPage_Thuong(int page)
+    {
+        return page == CurrentPageT;
+    }
+
+    public bool HasPreviousPage_Thuong()
+    {
+        return CurrentPageT > 1;
+    }
+
+    public bool HasNextPage_Thuong()
+    {
+        return CurrentPageT < totalPagesT;
+    }
+
+    // Giới hạn bản ghi Phạt
+    public int CurrentPageP = 1;
+    public int PageSizeP = 5; // Số lượng bản ghi trên mỗi trang
+    int totalRecordsP;
+    public int totalPagesP = 0;
+
+    private async Task LoadData_Phat()
+    {
+        if (phatListSearch.Count == 0)
+        {
+            totalRecordsP = await thietlapservices.GetTotalRecordsPhat();
+            totalPagesP = (int)Math.Ceiling(totalRecordsP / (double)PageSizeP);
+
+            if (totalPagesP > 0)
+            {
+                if (CurrentPageP < 1) CurrentPageP = 1;
+                else if (CurrentPageP > totalPagesP) CurrentPageP = totalPagesP;
+
+                int skip = (CurrentPageP - 1) * PageSizeP;
+                phatList = await thietlapservices.GetPhatPaged(skip, PageSizeP);
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+        else
+        {
+            totalRecordsP = phatListSearch.Count;
+            totalPagesP = (int)Math.Ceiling(totalRecordsP / (double)PageSizeP);
+
+            if (totalPagesP > 0)
+            {
+                if (CurrentPageP < 1) CurrentPageP = 1;
+                else if (CurrentPageP > totalPagesP) CurrentPageP = totalPagesP;
+
+                int skip = (CurrentPageP - 1) * PageSizeP;
+                phatList = phatListSearch.Skip(skip).Take(PageSizeP).ToList();
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+
+    }
+
+    // Các phương thức xử lý sự kiện phân trang
+    public async Task GoToPage_Phat(int page)
+    {
+        CurrentPageP = page;
+        await LoadData_Phat();
+    }
+
+    public bool IsCurrentPage_Phat(int page)
+    {
+        return page == CurrentPageP;
+    }
+
+    public bool HasPreviousPage_Phat()
+    {
+        return CurrentPageP > 1;
+    }
+
+    public bool HasNextPage_Phat()
+    {
+        return CurrentPageP < totalPagesP;
+    }
+}
+

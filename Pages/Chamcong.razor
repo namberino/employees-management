@@ -1,0 +1,511 @@
+﻿@page "/chamcong"
+@using FullProject.Data
+@using FullProject.Services
+@using FullProject.Model;
+@using Microsoft.EntityFrameworkCore
+@inject ChamCongService ChamCongService; //Dùng cái này sẽ cho phép sử dụng ChamCongService.function() từ bên class ChamCongService.cs
+@inject FullProject.Services.ChamCongService ChamCongService
+@inject FullProject.Services.ThietLapService thietlapservices
+@inject FullProject.Data.ThietLapContext thietLapContext
+@inject IJSRuntime JSRuntime
+
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+<PageTitle>Chấm công</PageTitle>
+
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="custom.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="moment.min.js"></script>
+    <script src="waypoints.min.js"></script>
+    <script src="js1.js"></script>
+    <script src="bt4.js"></script>
+
+</HeadContent>
+
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+        .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+</style>
+@code {
+
+    List<NhanVien> NhanViens = new List<NhanVien>();
+    List<ChamCong> ChamCongs = new List<ChamCong>();
+    List<PhongBan> PhongBans = new List<PhongBan>();
+    List<ChamCong> _filteredChamCongs = new();
+
+    //Phan trang start
+    public int CurrentPage = 1;
+    public int PageSize = 10; // Số lượng bản ghi trên mỗi trang
+    int totalRecords;
+    public int totalPages = 0;
+
+    private async Task LoadData()
+    {
+        // Tính toán số trang và lấy danh sách bản ghi cho trang hiện tại
+        totalRecords = await ChamCongService.GetTotalRecords();
+        totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+        //int totalPages = 8;
+
+        if (CurrentPage < 1)
+            CurrentPage = 1;
+        else if (CurrentPage > totalPages)
+            CurrentPage = totalPages;
+
+        int skip = (CurrentPage - 1) * PageSize;
+        _filteredChamCongs = await ChamCongService.GetChamCongPaged(skip, PageSize);
+    }
+
+    // Các phương thức xử lý sự kiện phân trang
+    public async Task GoToPage(int page)
+    {
+        CurrentPage = page;
+        await LoadData();
+    }
+
+    public bool IsCurrentPage(int page)
+    {
+        return page == CurrentPage;
+    }
+
+    public bool HasPreviousPage()
+    {
+        return CurrentPage > 1;
+    }
+
+    public bool HasNextPage()
+    {
+        return CurrentPage < (int)Math.Ceiling(totalRecords / (double)PageSize);
+    }
+
+    string searchTerm { get; set; } = "";
+
+    public async Task searchData()
+    {
+        await Task.Run(() =>
+        {
+            // Gọi hàm UpdateFilteredNhanViens với giá trị searchTerm
+            UpdateFilteredChamCong(searchTerm);
+        });
+        totalRecords = _filteredChamCongs.Count;
+        totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+    }
+    private string user_role = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+
+        }
+
+        NhanViens = await ChamCongService.GetAllNhanViens();
+        ChamCongs = await ChamCongService.GetAllChamCongs();
+        PhongBans = await ChamCongService.GetAllPhongBan();
+        _filteredChamCongs = ChamCongs.ToList();
+        await LoadData();
+    }
+
+    void UpdateFilteredChamCong(string searchTerm) // Parameter name changed to match SearchCriteria class
+    {
+        // Filter based on search term
+        var filteredList = ChamCongs.AsQueryable();
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = filteredList.Where(cc =>
+                cc.MaNV.ToLower().Contains(searchTerm.ToLower()) ||
+                NhanViens.Any(nv => nv.MaNV == cc.MaNV && nv.HoTen.ToLower().Contains(searchTerm.ToLower())) // Lọc theo tên nhân viên
+            );
+        }
+        // Cập nhật danh sách bảng công đã lọc
+        _filteredChamCongs = filteredList.ToList();
+    }
+
+
+    private IBrowserFile file;
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+    }
+
+    private async Task UploadFile()
+    {
+        if (file != null)
+        {
+            if (file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                using var stream = new MemoryStream();
+                await file.OpenReadStream().CopyToAsync(stream);
+                stream.Position = 0;
+
+                using var reader = new StreamReader(stream);
+                var content = await reader.ReadToEndAsync();
+                var result = await ProcessCsv(content);
+
+                if (result)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Tải dữ liệu thành công");
+                    await LoadData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Dữ liệu đã tồn tại");
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Phải tải file dưới định dạng .csv ");
+            }
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Phải chọn file để tải dữ liệu");
+        }
+    }
+
+    private async Task<bool> ProcessCsv(string content)
+    {
+        var lines = content.Split(Environment.NewLine);
+        var data = new List<ChamCong>();
+        bool isValid = true;
+
+        foreach (var line in lines)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                var values = line.Split(',');
+                if (values.Length >= 4)
+                {
+                    if (DateTime.TryParse(values[1], out DateTime ngayChamCong) &&
+                        TimeSpan.TryParse(values[2], out TimeSpan gioVao) &&
+                        TimeSpan.TryParse(values[3], out TimeSpan gioRa))
+                    {
+                        var model = new ChamCong
+                            {
+                                MaNV = values[0],
+                                NgayChamCong = ngayChamCong,
+                                GioVao = gioVao,
+                                GioRa = gioRa,
+                            };
+                        bool chamCong = await thietlapservices.KiemTraChamCong(model.MaNV, model.NgayChamCong);
+                        if (chamCong)
+                        {
+                            await JSRuntime.InvokeVoidAsync("alert", "Dữ liệu đã tồn tại");
+                            isValid = false;
+                            break;
+                        }
+
+                        data.Add(model);
+                    }
+                    else
+                    {
+                        isValid = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+        }
+
+        if (isValid)
+        {
+            try
+            {
+                SaveDataToDatabase(data);
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    private void SaveDataToDatabase(List<ChamCong> data)
+    {
+        thietLapContext.ChamCongs.AddRange(data);
+        thietLapContext.SaveChanges();
+    }
+
+}
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="container-fluid position-relative d-flex p-0">
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 6" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                        <a class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                        <div class="dropdown-menu bg-transparent border-0 show ">
+                            <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+
+                            <a href="chamcong" class="dropdown-item active" id="drop22">Chấm công nhân viên</a>
+                            <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                        </div>
+                    }
+                </div>
+
+                @if (user_role == "Cap 5" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                {
+                    <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 4" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                        <div class="dropdown-menu bg-transparent border-0 ">
+                            <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                            <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                        </div>
+                    }
+                </div>
+                <div class="navbar-nav w-100">
+                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                        <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-white navbar-dark sticky-top px-4 py-0">
+            <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                @* <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:black">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div> *@
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">Admin1</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-white border-0 rounded-0 rounded-bottom m-0 text-dark">
+
+                        <a href="/" class="dropdown-item text-dark">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="text-left rounded p-4 bg-white">
+                <b><h3 class="text-dark">Bảng chấm công nhân viên</h3></b>
+            </div>
+        </div>
+
+
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-white text-center rounded p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex">
+                        <span><InputFile OnChange="HandleFileSelected"  class="form-control bg-white border-1 " /> </span>
+                        <button style="margin-left:10px;" class="btn btn-primary" id="searchButton" type="button" @onclick="UploadFile">Tải file</button>
+                    </div>
+                    <div class="d-flex">
+                        <span><input class="form-control bg-white border-1 " id="search-box" name="search" type="search" placeholder="Search" @bind="searchTerm"></span>
+                        <button style="margin-left:10px;" class="btn btn-primary" id="searchButton" type="button" @onclick="searchData">Tìm</button>
+                    </div>
+                </div>
+                <div class="w-100">
+                    @* <SearchBox NhanViens="NhanViens" OnSearch="@(searchCriteria => UpdateFilteredChamCong(searchCriteria.SearchTerm))" /> *@
+                </div>
+                <div class="table-responsive text-dark">
+                    <table class="table text-center text-dark align-middle table-bordered table-hover mb-0" id="table">
+                        <thead>
+                            <tr class="text-dark">
+                                <th scope="col">Mã Nhân Viên</th>
+                                <th scope="col">Tên Nhân Viên</th>
+                                <th scope="col">Ngày</th>
+                                <th scope="col">Giờ vào</th>
+                                <th scope="col">Giờ ra</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var chamCong in _filteredChamCongs)
+                            {
+                                var nhanViens = NhanViens.FirstOrDefault(nhanVien => nhanVien.MaNV == chamCong.MaNV);
+                                var phongBan = nhanViens != null ? PhongBans.FirstOrDefault(pb => pb.MaPhongBan == nhanViens.MaPhongBan)?.TenPhongBan : "-";
+                                var ngayChamCong = chamCong.NgayChamCong.ToShortDateString();
+
+                                <tr>
+                                    <td>@chamCong.MaNV</td>
+                                    <td>@(nhanViens?.HoTen ?? "-")</td>
+                                    <td>@ngayChamCong</td>
+                                    <td>@chamCong.GioVao</td>
+                                    <td>@chamCong.GioRa</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="col-12 col-sm-3 text-center text-sm-start mx-auto pt-4 px-4">
+                        <tfoot>
+                            <tr>
+                                <td style="margin-left:50px">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item @(!HasPreviousPage() ? "disabled" : "")">
+                                                <button class="page-link" disabled="@(!HasPreviousPage())" @onclick="() => GoToPage(CurrentPage - 1)">Previous</button>
+                                            </li>
+                                            @if (totalPages <= 5)
+                                            {
+                                                for (int i = 1; i <= totalPages; i++)
+                                                {
+                                                    <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                        <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                    </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (CurrentPage <= 3)
+                                                {
+                                                    for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                                else if (CurrentPage >= totalPages - 2)
+                                                {
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = totalPages - 4; i <= totalPages; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = CurrentPage - 2; i <= CurrentPage + 2; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                            }
+                                            <li class="page-item @(!HasNextPage() ? "disabled" : "")">
+                                                <button class="page-link" disabled="@(!HasNextPage())" @onclick="() => GoToPage(CurrentPage + 1)">Next</button>
+                                            </li>
+                                        </ul>
+
+                                    </nav>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Start -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-white rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start ">
+                        Copyright © 2024 Project - 22IT1 - CMC Uni.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+    </div>
+    <!-- Content End -->
+</div>
+<script src="js/custom.js"></script>
+

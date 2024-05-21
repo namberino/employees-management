@@ -1,0 +1,580 @@
+﻿@page "/trangchu"
+
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+    <PageTitle>Trang chủ</PageTitle>
+    <style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        height: 100vh;
+        background: var(--secondary);
+        transition: 0.5s;
+        z-index: 999;
+    }
+
+    .content.px-4 {
+        padding-left: 0 !important;
+    }
+
+    .bg-secondary {
+        background-color: white !important;
+    }
+
+    .content .navbar .dropdown-item {
+        color: black;
+    }
+    </style>
+    <HeadContent>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />         
+        <link href="_content/Blazor.Bootstrap/blazor.bootstrap.css" rel="stylesheet" />
+        <link href="css/admin.css" rel="stylesheet" />
+        <link href="css/Trangchu.css" rel="stylesheet" />
+        <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="custom.js"></script>
+        <script src="moment.min.js"></script>
+        <script src="waypoints.min.js"></script>
+        <script src="js1.js"></script>
+        <script src="bt4.js"></script>
+    </HeadContent>
+
+    <div class="container-fluid position-relative d-flex p-0">
+        <!-- Sidebar Start -->
+        <div class="sidebar pe-4 pb-3">
+            <nav class="navbar bg-white text-dark navbar-dark">
+                <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+                </a>
+                <div class="d-flex align-items-center ms-4 mb-4">
+                    <div class="position-relative">
+                        <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                    </div>
+                    <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                    </div>
+                </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 6" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                        <div class="dropdown-menu bg-transparent border-0 ">
+                            <a href="bangcong" class="dropdown-item" id="drop21">Bảng công nhân viên</a>
+
+                            <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                            <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                        </div>
+                    }
+                </div>
+
+                @if (user_role == "Cap 1" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 5")
+                {
+                    <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 1" || user_role == "Cap 2" || user_role == "Cap 4")
+                    {
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                        <div class="dropdown-menu bg-transparent border-0 ">
+                            <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                            <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                        </div>
+                    }
+                </div>
+                <div class="navbar-nav w-100">
+                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                        <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+                    }
+                </div>
+
+            </div>
+            </nav>
+        </div>
+        <!-- Sidebar End -->
+        <!-- Content Start -->
+        <div class="content">
+
+            <!-- Navbar Start -->
+            <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+                <a href="admin_dashboard.html" class="navbar-brand d-flex d-lg-none me-4">
+                    <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+                </a>
+                <a class="sidebar-toggler flex-shrink-0">
+                    <i class="fa fa-bars"></i>
+                </a>
+
+                <div class="navbar-nav align-items-center ms-auto">
+@*                     <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fa fa-bell me-lg-2"></i>
+                            <span class="d-none d-lg-inline-flex">Notification</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                            <a class="dropdown-item" onclick="">
+                                <h6 class="fw-normal mb-0" style="color:black">Profile updated</h6>
+                                <small>15 minutes ago</small>
+                            </a>
+                            <hr class="dropdown-divider">
+                            <a class="dropdown-item" onclick="">
+                                <h6 class="fw-normal mb-0" >Password changed</h6>
+                                <small>15 minutes ago</small>
+                            </a>
+                        </div>
+                    </div> *@
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+
+                            <a href="/" class="dropdown-item">Sign Out</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- Navbar End -->
+            <div class="content1">
+                <div class="row g-4">
+                    <div class="col-sm-6 col-xl-3 ">
+                        <div class=" d-flex justify-content-between p-4 background-white rounded">
+                            <Icon Name="IconName.BarChartFill" Size="IconSize.x1" Class="icon" />
+                            <div class="ms-3">
+                            <p class="mb-2 ">Tổng số nhân viên</p>
+                            <h6 class="mb-0">@totalEmployees </h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class=" d-flex justify-content-between p-4 background-white rounded">
+                            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x1" Class="icon" />
+                            <div class="ms-3">
+                            <p class="mb-2">Tổng số phòng ban</p>
+                            <h6 class="mb-0">@totalphongban</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class=" d-flex justify-content-between p-4 background-white rounded">
+                            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x1" Class="icon" />
+                            <div class="ms-3">
+                            <p class="mb-2">Nhân viên hợp đồng</p>
+                            <h6 class="mb-0">@totalnhanvienhopdong</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class=" d-flex justify-content-between p-4 background-white rounded">
+                            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x1" Class="icon" />
+                            <div class="ms-3">
+                            <p class="mb-2">Nhân viên chính thức</p>
+                            <h6 class="mb-0">@totalnhanvienchinhthuc</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Chart Start -->
+            <div class="container-fluid">
+                <div class="row g-4">
+                    <div class="col-sm-12 col-xl-6">
+                        <div class="bg-white text-center rounded p-4 mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h5 class="mb-0 text-dark">Biến động nhân sự</h5>
+                            </div>
+                            <LineChart @ref="lineChart" Class="mb-4" />
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-xl-6 ">
+                        <div class="bg-white text-center rounded p-4 mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h5 class="mb-0  text-dark">Tổng số lượng nhân viên</h5>
+                            </div>
+                            <BarChart @ref="barChart" Class="mb-4" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sales Chart End -->
+            <!-- Sales Chart Start -->
+            <div class="container-fluid">
+                <div class="row g-4">
+                    <div class="col-sm-12 col-xl-6 ">
+                        <div class="bg-white text-center rounded p-4 ">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h5 class="mb-0 text-dark">Phân bố độ tuổi</h5>
+                            </div>
+                            <BarChart @ref="barChart1" Class="mb-4" />
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-xl-6 ">
+                        <div class="bg-white text-center rounded p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h5 class="mb-0  text-dark">Nhân sự các phòng ban</h5>
+                            </div>
+                            <BarChart @ref="barChart2" Class="mb-4" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sales Chart End -->
+
+            <!-- Footer Start -->
+            <div class="container-fluid pt-4 px-4 ">
+                <div class="bg-secondary rounded-top p-4 bg-white">
+                    <div class="row ">
+                        <div class="col-12 col-sm-6 text-center text-sm-start ">
+                            Copyright © 2024 Project - 22IT1 - CMC Uni.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer End -->
+        </div>
+        <!-- Content End -->
+
+    </div>
+
+
+
+@code {
+     @using FullProject.Model;
+    @using FullProject.Data;
+    @using FullProject.Services;
+    @using System.Data.SqlClient
+    @using Microsoft.EntityFrameworkCore.Metadata.Internal
+    @using Microsoft.JSInterop
+    @inject ThietLapService thietlapservices;
+    @inject FullProject.Data.ThietLapContext thietLapContext
+    @using Microsoft.EntityFrameworkCore;
+    @inject IJSRuntime JSRuntime
+ 
+
+    private BarChart barChart = default!;
+    private LineChart lineChart = default!;
+    private BarChart barChart1 = default!;
+    private DoughnutChart doughnutChart = default!;
+    private BarChart barChart2 = default!;
+    private string user_role = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+        }
+
+        // Inject ThietLapService
+        var thietLapService = new ThietLapService(new ThietLapContext()); // Replace this with actual injection method
+
+        // Call method to get total employees
+        totalEmployees = await thietLapService.GetTotalEmployees();
+
+
+        totalphongban = await thietLapService.GetTotalPhongBan();
+
+        totalnhanvienchinhthuc = await thietLapService.GetTotalNhanVienChinhThuc();
+
+        totalnhanvienhopdong = await thietLapService.GetTotalNhanVienHopDong();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderManhattanAsync();
+            await RenderWormAsync();
+            await DoTuoi();
+            await OnInitializedlinh();
+            await barChart2.InitializeAsync(chartData, barChartOptions);
+
+            //user_role = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "Role");
+            StateHasChanged(); // Notify Blazor that the state has changed
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    /*(private async Task CheckUserRole()
+    {
+        var userRole = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "Role");
+
+        if (userRole == "Cap 1" || userRole == "Cap 2" || userRole == "Cap 3")
+        {
+            user_role = userRole;
+            StateHasChanged();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }*/
+
+    private async Task RenderManhattanAsync()
+    {
+        try
+        {
+            // Lấy tổng số nhân viên từng năm
+            var employeeCountsByYear = await thietlapservices.GetTotalEmployeesByYear();
+
+            // Kiểm tra và xử lý kết quả
+            if (employeeCountsByYear != null && employeeCountsByYear.Count > 0)
+            {
+                var years = employeeCountsByYear.Keys.ToList();
+                var counts = employeeCountsByYear.Values.ToList();
+
+                // Tạo dữ liệu cho biểu đồ
+                var data = new ChartData
+                    {
+                        Labels = years.Select(year => year.ToString()).ToList(),
+                        Datasets = new List<IChartDataset>()
+                {
+                    new BarChartDataset()
+                    {
+                        Label = "Nhân viên",
+                        Data = counts.Select(count => (double)count).ToList(),
+                        BackgroundColor = new List<string>{ "rgb(255, 166, 0)" },
+                        CategoryPercentage = 0.5,
+                        BarPercentage = 1,
+                    }
+                }
+                    };
+
+                var options = new BarChartOptions();
+
+                options.Interaction.Mode = InteractionMode.Index;
+                options.Responsive = true;
+
+                options.Scales.X!.Title!.Text = "Năm";
+                options.Scales.X.Title.Display = true;
+
+                options.Scales.Y!.Title!.Text = "Nhân viên";
+                options.Scales.Y.Title.Display = true;
+
+                await barChart.InitializeAsync(data, options);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Xử lý nếu có lỗi xảy ra
+            Console.WriteLine("Error rendering Manhattan chart: " + ex.Message);
+        }
+    }
+
+    private async Task RenderWormAsync()
+    {
+        var resignedData = new List<double>();
+        var newData = new List<double>();
+
+        // Lấy số lượng nhân viên nghỉ việc và vào làm cho từng năm
+        for (int year = 2017; year <= 2024; year++)
+        {
+            resignedData.Add(await thietlapservices.GetResignedEmployeesCountByYear(year));
+            newData.Add(await thietlapservices.GetNewEmployeesCountByYear(year));
+        }
+
+        var data = new ChartData
+            {
+                Labels = new List<string> { "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024" },
+                Datasets = new List<IChartDataset>()
+        {
+            new LineChartDataset()
+            {
+                Label = "Tiếp nhận",
+                Data = newData,
+                BackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                BorderColor = new List<string>{ "rgb(88, 80, 141)" },
+                BorderWidth = new List<double>{2},
+                HoverBorderWidth = new List<double>{4},
+                PointBackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                PointBorderColor = new List<string>{ "rgb(88, 80, 141)" },
+                PointRadius = new List<int>{0}, // hide points
+                PointHoverRadius = new List<int>{4},
+            },
+            new LineChartDataset()
+            {
+                Label = "Nghỉ việc",
+                Data = resignedData,
+                BackgroundColor = new List<string>{ "rgb(255, 166, 0)" },
+                BorderColor = new List<string>{ "rgb(255, 166, 0)" },
+                BorderWidth = new List<double>{2},
+                HoverBorderWidth = new List<double>{4},
+                PointBackgroundColor = new List<string>{ "rgb(255, 166, 0)" },
+                PointBorderColor = new List<string>{ "rgb(255, 166, 0)" },
+                PointRadius = new List<int>{0}, // hide points
+                PointHoverRadius = new List<int>{4},
+            }
+        }
+            };
+
+        var options = new LineChartOptions();
+
+        options.Interaction.Mode = InteractionMode.Index;
+
+        options.Responsive = true;
+
+        options.Scales.X!.Title!.Text = "Năm";
+        options.Scales.X.Title.Display = true;
+
+        options.Scales.Y!.Title!.Text = "Nhân viên";
+        options.Scales.Y.Title.Display = true;
+
+        await lineChart.InitializeAsync(data, options);
+    }
+
+
+    private async Task DoTuoi()
+    {
+        using (var context = new ThietLapContext())
+        {
+
+            // Lấy danh sách ngày sinh của những nhân viên có trạng thái là "Đang làm việc"
+            var ngaySinhList = await context.NhanViens
+                .Where(nv => nv.TrangThai == "Đang làm việc")
+                .Select(nv => nv.NgaySinh)
+                .ToListAsync();
+
+            // Tính độ tuổi của từng nhân viên và phân nhóm theo khoảng độ tuổi
+            var tuoiGroups = ngaySinhList.Select(CalculateAge)
+                                         .GroupBy(tuoi => GetAgeGroup(tuoi))
+                                         .OrderBy(group => group.Key)
+                                         .ToList();
+
+            // Khởi tạo dữ liệu cho biểu đồ
+            var chartData = new ChartData
+                {
+                    Labels = new List<string> { "20-25", "26-30", "31-35", "36-40", "41-45", "46-50", "50+" },
+                    Datasets = new List<IChartDataset>()
+            {
+                new BarChartDataset()
+                {
+                    Label = "Nhân viên",
+                    Data = tuoiGroups.Select(group => (double)group.Count()).ToList(),
+                    BackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                    CategoryPercentage = 0.5,
+                    BarPercentage = 1,
+                },
+            }
+                };
+
+            // Cài đặt các tùy chọn cho biểu đồ
+            var options = new BarChartOptions();
+            options.Interaction.Mode = InteractionMode.Index;
+            options.Responsive = true;
+            options.Scales.X!.Title!.Text = "Độ tuổi";
+            options.Scales.X.Title.Display = true;
+            options.Scales.Y!.Title!.Text = "Số lượng nhân viên";
+            options.Scales.Y.Title.Display = true;
+
+            // Khởi tạo biểu đồ
+            await barChart1.InitializeAsync(chartData, options);
+        }
+    }
+
+    // Hàm tính độ tuổi từ ngày sinh
+    private int CalculateAge(DateTime dateOfBirth)
+    {
+        var today = DateTime.Now;
+        var age = today.Year - dateOfBirth.Year;
+        if (today.Month < dateOfBirth.Month || (today.Month == dateOfBirth.Month && today.Day < dateOfBirth.Day))
+        {
+            age--;
+        }
+        return age;
+    }
+
+    // Hàm phân nhóm độ tuổi vào các khoảng nhất định
+    private string GetAgeGroup(int age)
+    {
+        if (age >= 20 && age <= 25) return "20-25";
+        if (age >= 26 && age <= 30) return "26-30";
+        if (age >= 31 && age <= 35) return "31-35";
+        if (age >= 36 && age <= 40) return "36-40";
+        if (age >= 41 && age <= 45) return "41-45";
+        if (age >= 46 && age <= 50) return "46-50";
+        return "50+";
+    }
+
+    private BarChartOptions barChartOptions = default!;
+    private ChartData chartData = default!;
+
+    private async Task OnInitializedlinh()
+    {
+        // Lấy số lượng phòng ban và số lượng nhân viên của mỗi phòng ban
+        var (departmentCount, departmentEmployeesCount) = await thietlapservices.CountDepartmentsAndEmployees();
+
+        // Sử dụng dữ liệu để cập nhật biểu đồ
+        var labels = departmentEmployeesCount.Keys.ToList();
+        var employeeCounts = departmentEmployeesCount.Values.ToList();
+
+        var datasets = new List<IChartDataset>();
+
+        var dataset1 = new BarChartDataset()
+            {
+                Data = employeeCounts.Select(count => (double)count).ToList(),
+                BackgroundColor = new List<string> { ColorBuilder.CategoricalTwelveColors[0] },
+                BorderColor = new List<string> { ColorBuilder.CategoricalTwelveColors[0] },
+                BorderWidth = new List<double> { 0 },
+            };
+        datasets.Add(dataset1);
+
+        var chartData = new ChartData
+            {
+                Labels = labels,
+                Datasets = datasets
+            };
+
+        var barChartOptions = new BarChartOptions();
+        barChartOptions.Responsive = true;
+        barChartOptions.Interaction = new Interaction { Mode = InteractionMode.Y };
+        barChartOptions.IndexAxis = "y";
+
+        barChartOptions.Scales.X!.Title!.Text = "Nhân sự";
+        barChartOptions.Scales.X.Title.Display = true;
+
+        barChartOptions.Scales.Y!.Title!.Text = "Phòng ban";
+        barChartOptions.Scales.Y.Title.Display = true;
+
+        barChartOptions.Plugins.Legend.Display = false;
+
+        await barChart2.InitializeAsync(chartData, barChartOptions);
+    }
+
+    private int totalEmployees;
+    private int totalnhanvienhopdong;
+    private int totalphongban;
+    private int totalnhanvienchinhthuc;
+
+
+    private async Task<string> GetUserRole()
+    {
+        return user_role ?? ""; // Return an empty string if role is null
+    }
+}

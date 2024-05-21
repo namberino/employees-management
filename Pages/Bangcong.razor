@@ -1,0 +1,656 @@
+﻿@page "/bangcong"
+<PageTitle>Bảng công</PageTitle>
+@using FullProject.Data;
+@using FullProject.Services;
+@using FullProject.Model;
+@using System.Diagnostics;
+@using System.Globalization
+@inject BangCongService BangCongService;//Dùng cái này sẽ cho phép sử dụng BangCongService.function() từ bên class BangCongService.cs
+@inject FullProject.Services.BangCongService BangCongService
+
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
+
+@code {
+    List<NhanVien> NhanViens = new List<NhanVien>();
+    List<BangCong> BangCongs = new List<BangCong>();
+    List<PhongBan> PhongBans = new List<PhongBan>();
+    List<ChamCong> ChamCongs = new List<ChamCong>();
+    List<ThietLap> ThietLaps = new List<ThietLap>();
+    List<NhanVien> _filteredNhanViens = new();
+    List<NhanVien> _filteredNhanViensSearch = new();
+
+    private string user_role = null;
+
+    //Dem so ngy di am muon
+    private int DemSoNgayDiMuon(string maNV, DateTime ngayDauThang, DateTime ngayCuoiThang)
+    {
+        // Lọc các bản ghi chấm công của nhân viên trong tháng
+        var chamCongsTrongThang = ChamCongs
+            .Where(cc => cc.MaNV == maNV && cc.NgayChamCong >= ngayDauThang && cc.NgayChamCong <= ngayCuoiThang)
+            .ToList();
+
+        // Đếm số ngày đi muộn
+        int soNgayDiMuon = 0;
+        foreach (var chamCong in chamCongsTrongThang)
+        {
+            TimeSpan gioVao = chamCong.GioVao; // Sử dụng trực tiếp giá trị TimeSpan
+            TimeSpan gioVaoMoc = TimeSpan.Parse("08:30:00");
+            if (TimeSpan.Compare(gioVao, gioVaoMoc) > 0) // So sánh với thời gian 8:30 AM
+            {
+                soNgayDiMuon++;
+            }
+        }
+
+        return soNgayDiMuon;
+    }
+    //Dem so ngay di ve som
+    private int DemSoNgayVeSom(string maNV, DateTime ngayDauThang, DateTime ngayCuoiThang)
+    {
+        // Lọc các bản ghi chấm công của nhân viên trong tháng
+        var chamCongsTrongThang = ChamCongs
+            .Where(cc => cc.MaNV == maNV && cc.NgayChamCong >= ngayDauThang && cc.NgayChamCong <= ngayCuoiThang)
+            .ToList();
+
+        // Đếm số ngày về sớm
+        int soNgayVeSom = 0;
+        foreach (var chamCong in chamCongsTrongThang)
+        {
+            TimeSpan gioRa = chamCong.GioRa; // Sử dụng trực tiếp giá trị TimeSpan
+            TimeSpan gioRaMoc = TimeSpan.Parse("17:30:00");
+            if (TimeSpan.Compare(gioRa, gioRaMoc) < 0) // So sánh với thời gian 5:30 PM
+            {
+                soNgayVeSom++;
+            }
+        }
+
+        return soNgayVeSom;
+    }
+
+    private int DemSoNgayChamCongTrongThang(string maNV, DateTime ngayDauThang, DateTime ngayCuoiThang)
+    {
+        // Lọc ra danh sách chấm công trong tháng cho nhân viên có mã maNV
+        var chamCongsCuaNhanVienTrongThang = ChamCongs
+            .Where(cc => cc.MaNV == maNV && cc.NgayChamCong >= ngayDauThang && cc.NgayChamCong <= ngayCuoiThang)
+            .ToList();
+
+        // Đếm số ngày chấm công trong tháng cho nhân viên có mã maNV
+        return chamCongsCuaNhanVienTrongThang.Count;
+    }
+
+    //Phan trang start
+    public int CurrentPage = 1;
+    public int PageSize = 10; // Số lượng bản ghi trên mỗi trang
+    int totalRecords;
+    public int totalPages;
+
+    public async Task LoadData()
+    {
+        if (_filteredNhanViensSearch.Count == 0)
+        {
+            totalRecords = await BangCongService.GetTotalRecords();
+            totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+
+            if (totalPages > 0)
+            {
+                if (CurrentPage < 1) CurrentPage = 1;
+                else if (CurrentPage > totalPages) CurrentPage = totalPages;
+
+                int skip = (CurrentPage - 1) * PageSize;
+                _filteredNhanViens = await BangCongService.GetBangCongPaged(skip, PageSize);
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+        else
+        {
+            totalRecords = _filteredNhanViensSearch.Count;
+            totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+
+            if (totalPages > 0)
+            {
+                if (CurrentPage < 1) CurrentPage = 1;
+                else if (CurrentPage > totalPages) CurrentPage = totalPages;
+
+                int skip = (CurrentPage - 1) * PageSize;
+                _filteredNhanViens = _filteredNhanViensSearch.Skip(skip).Take(PageSize).ToList();
+            }
+            else
+            {
+                Console.WriteLine("Không có dữ liệu để hiển thị.");
+            }
+        }
+    }
+
+    // Các phương thức xử lý sự kiện phân trang
+    public async Task GoToPage(int page)
+    {
+        CurrentPage = page;
+        await LoadData();
+    }
+
+    public bool IsCurrentPage(int page)
+    {
+        return page == CurrentPage;
+    }
+
+    public bool HasPreviousPage()
+    {
+        return CurrentPage > 1;
+    }
+
+    public bool HasNextPage()
+    {
+        return CurrentPage < (int)Math.Ceiling(totalRecords / (double)PageSize);
+    }
+    //Phan trang ket thuc
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync called");
+        if (!AuthService.IsAuthenticated || AuthService.Username.Length == 0 || AuthService.Username == null || AuthService.UserRole.Length == 0 || AuthService.UserRole == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            user_role = AuthService.UserRole;
+            Console.WriteLine("User role is: ", user_role);
+            Console.WriteLine("User is authenticated");
+        }
+
+        NhanViens = await BangCongService.GetAllNhanViens();
+        BangCongs = await BangCongService.GetAllBangCongs();
+        PhongBans = await BangCongService.GetAllPhongBans();
+        ChamCongs = await BangCongService.GetAllChamCongs();
+        ThietLaps = await BangCongService.GetAllThietLaps();
+        _filteredNhanViens = NhanViens.ToList();
+        await LoadData();
+    }
+
+    public string thangChamCong1 = "04/2024";
+    private async void UpdateFilteredNhanViens(string searchTerm, string selectedChucVu, string selectedPhongBan, string thangChamCong) // Parameter name changed to match SearchCriteria class
+    {
+        if (thangChamCong == "mm/yyyy" || thangChamCong == null)
+        {
+            thangChamCong1 = "04/2024";
+        }
+        else
+        {
+            thangChamCong1 = thangChamCong;
+
+
+
+        }
+        // Filter based on search term
+        var filteredList = NhanViens.AsQueryable();
+        var phongBans = PhongBans.AsQueryable();
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                nv.MaNV.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            );
+
+        }
+
+        // Filter based on additional criteria (optional)
+        if (selectedChucVu == "Chức vụ" && string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = NhanViens.AsQueryable();
+
+        }
+        else if (selectedChucVu == "Chức vụ" && !string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                nv.MaNV.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            );
+
+
+        }
+        else if (!string.IsNullOrEmpty(selectedChucVu) && !string.IsNullOrEmpty(searchTerm) && selectedPhongBan == "Phòng Ban")
+        {
+            filteredList = filteredList.Where(nv =>
+                (nv.HoTen.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                nv.MaNV.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
+                nv.ChucVu == selectedChucVu
+            );
+
+            //filteredList = filteredList.Where(nv => nv.ChucVu == selectedChucVu);
+        }
+        else if (string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = filteredList.Where(nv =>
+                nv.ChucVu == selectedChucVu
+            );
+
+        }
+
+        if ((selectedPhongBan == "Phòng ban" || string.IsNullOrEmpty(selectedPhongBan)) && (selectedChucVu == "Chức vụ" || string.IsNullOrEmpty(selectedChucVu)) && string.IsNullOrEmpty(searchTerm))
+        {
+            filteredList = NhanViens.AsQueryable();
+
+        }
+        else if ((selectedPhongBan == "Phòng ban" || string.IsNullOrEmpty(selectedPhongBan)) && !string.IsNullOrEmpty(searchTerm) && (selectedChucVu == "Chức vụ" || string.IsNullOrEmpty(selectedChucVu)))
+        {
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                nv.MaNV.ToLower().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            );
+
+        }
+        else if ((selectedChucVu == "Chức vụ" || string.IsNullOrEmpty(selectedChucVu)) && string.IsNullOrEmpty(searchTerm) && !(selectedPhongBan == "Phòng ban") && !string.IsNullOrEmpty(selectedPhongBan))
+        {
+            filteredList = NhanViens.AsQueryable();
+            // Filter based on selected department only
+            filteredList = filteredList.Join(
+                phongBans,
+                nv => nv.MaPhongBan,
+                pb => pb.MaPhongBan,
+                (nv, pb) => new { NhanVien = nv, PhongBan = pb }
+            )
+            .Where(join =>
+                join.PhongBan.TenPhongBan.ToLower() == selectedPhongBan.ToLower()
+            )
+            .Select(join => join.NhanVien);
+
+        }
+        else if (!string.IsNullOrEmpty(selectedChucVu) && string.IsNullOrEmpty(searchTerm) && !string.IsNullOrEmpty(selectedPhongBan) && !(selectedPhongBan == "Phòng ban"))
+        {
+            // Filter based on selected department
+            filteredList = filteredList.Join(
+                phongBans,
+                nv => nv.MaPhongBan,
+                pb => pb.MaPhongBan,
+                (nv, pb) => new { NhanVien = nv, PhongBan = pb }
+            )
+            .Where(join =>
+                join.PhongBan.TenPhongBan.ToLower() == selectedPhongBan.ToLower()
+            )
+           .Select(join => join.NhanVien);
+
+        }
+        else if ((!string.IsNullOrEmpty(selectedChucVu) && !(selectedChucVu == "Chức vụ")) && string.IsNullOrEmpty(searchTerm) && (selectedPhongBan == "Phòng ban" || string.IsNullOrEmpty(selectedPhongBan)))
+        {
+            // Start with the full list of employees
+            filteredList = NhanViens.AsQueryable();
+
+            // Filter based on selected position
+            if (!string.IsNullOrEmpty(selectedChucVu) && selectedChucVu != "Chức vụ")
+            {
+                filteredList = filteredList.Where(nv =>
+                    nv.ChucVu.ToLower() == selectedChucVu.ToLower()
+                );
+            }
+
+        }
+        else if ((!string.IsNullOrEmpty(selectedChucVu) && !(selectedChucVu=="Chức vụ")) && !string.IsNullOrEmpty(searchTerm) && (selectedPhongBan == "Phòng ban" || string.IsNullOrEmpty(selectedPhongBan)))
+        {
+            // Filter based on selected position
+            // Filter based on selected position
+            filteredList = filteredList.Where(nv =>
+                nv.ChucVu.ToLower() == selectedChucVu.ToLower()
+            );
+
+            // Filter based on search term
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm.ToLower()) ||
+                nv.MaNV.ToLower().Contains(searchTerm.ToLower())
+            );
+
+        }
+        else if ((string.IsNullOrEmpty(selectedChucVu) || selectedChucVu == "Chức vụ") && !string.IsNullOrEmpty(searchTerm) && (string.IsNullOrEmpty(selectedPhongBan) || selectedPhongBan=="Phòng ban"))
+        {
+            // Start with the full list of employees
+            filteredList = NhanViens.AsQueryable();
+
+            // Filter based on search term
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm.ToLower()) ||
+                nv.MaNV.ToLower().Contains(searchTerm.ToLower())
+            );
+
+        }
+        else if ((string.IsNullOrEmpty(selectedChucVu) || selectedChucVu == "Chức vụ") && !string.IsNullOrEmpty(searchTerm) && !string.IsNullOrEmpty(selectedPhongBan) && !(selectedPhongBan == "Phòng ban"))
+        {
+            // Start with the full list of employees
+            filteredList = NhanViens.AsQueryable();
+
+            // Filter based on selected department
+            filteredList = filteredList.Join(
+                phongBans,
+                nv => nv.MaPhongBan,
+                pb => pb.MaPhongBan,
+                (nv, pb) => new { NhanVien = nv, PhongBan = pb }
+            )
+            .Where(join =>
+                join.PhongBan.TenPhongBan.ToLower() == selectedPhongBan.ToLower()
+            )
+            .Select(join => join.NhanVien);
+
+            // Filter based on search term
+            filteredList = filteredList.Where(nv =>
+                        nv.HoTen.ToLower().Contains(searchTerm.ToLower()) || nv.MaNV.ToLower().Contains(searchTerm.ToLower())
+                    );
+
+        }
+        else if ((!string.IsNullOrEmpty(selectedChucVu)) && !string.IsNullOrEmpty(searchTerm) && !string.IsNullOrEmpty(selectedPhongBan) && !(selectedPhongBan == "Phòng ban"))
+        {
+            filteredList = NhanViens.AsQueryable();
+            // Filter based on selected department
+            filteredList = filteredList.Join(
+                phongBans,
+                nv => nv.MaPhongBan,
+                pb => pb.MaPhongBan,
+                (nv, pb) => new { NhanVien = nv, PhongBan = pb }
+            )
+            .Where(join =>
+                join.PhongBan.TenPhongBan.ToLower() == selectedPhongBan.ToLower()
+            )
+            .Select(join => join.NhanVien);
+
+            // Filter based on selected position
+            // Filter based on selected position
+            filteredList = filteredList.Where(nv =>
+                nv.ChucVu.ToLower() == selectedChucVu.ToLower()
+            );
+
+            // Filter based on search term
+            filteredList = filteredList.Where(nv =>
+                nv.HoTen.ToLower().Contains(searchTerm.ToLower()) ||
+                nv.MaNV.ToLower().Contains(searchTerm.ToLower())
+            );
+
+        }
+
+        _filteredNhanViensSearch = filteredList.ToList();
+
+        totalRecords = _filteredNhanViensSearch.Count;
+        totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+        // Giới hạn danh sách để hiển thị chỉ các bản ghi trên trang hiện tại
+        int skip = (CurrentPage - 1) * PageSize;
+        _filteredNhanViens = _filteredNhanViensSearch.Skip(skip).Take(PageSize).ToList();
+    }
+}
+
+
+<HeadContent>
+    <link href="css/admin.css" rel="stylesheet" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="container-fluid position-relative d-flex p-0 ">
+    <!-- Sidebar Start -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-white text-dark navbar-dark">
+            <a href="trangchu" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>HR</h3>
+            </a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0 text-dark">@AuthService.Username</h6>
+                    <span>@AuthService.UserRole</span>
+                </div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="trangchu" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Trang chủ</a>
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 6" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                        <a class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="fa fa-table me-2"></i>Bảng công</a>
+                        <div class="dropdown-menu bg-transparent border-0 show">
+                            <a href="bangcong" class="dropdown-item active" id="drop21">Bảng công nhân viên</a>
+
+                            <a href="chamcong" class="dropdown-item" id="drop22">Chấm công nhân viên</a>
+                            <a href="thietlap" class="dropdown-item" id="drop22">Thiết lập</a>
+                        </div>
+                    }
+                </div>
+
+                @if (user_role == "Cap 5" || user_role == "Cap 3" || user_role == "Cap 2" || user_role == "Cap 1")
+                {
+                    <a href="danhsach_nv" class="nav-item nav-link "><i class="fa fa-user-tie me-2"></i>Quản lí nhân sự</a>
+                }
+
+                <div class="nav-item dropdown">
+                    @if (user_role == "Cap 4" || user_role == "Cap 2" || user_role == "Cap 1")
+                    {
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-money-check me-2"></i>Quản lí lương</a>
+                        <div class="dropdown-menu bg-transparent border-0 ">
+                            <a href="bangluong" class="dropdown-item" id="drop21">Bảng lương</a>
+
+                            <a href="thuong_phat" class="dropdown-item" id="drop22">Bảng thưởng/phạt</a>
+                        </div>
+                    }
+                </div>
+                <div class="navbar-nav w-100">
+                    <!-- Get user role -->
+                    @if (user_role == "Cap 1")
+                    {
+                        <a href="captaikhoan" class="nav-item nav-link"><i class="fa fa-id-card me-2"></i>Cấp tài khoản</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!-- Sidebar End -->
+    <!-- Content Start -->
+    <div class="content">
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand bg-secondary navbar-dark sticky-top px-4 py-0 bg-white">
+            <a href="trangchu" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-user-edit"></i></h2>
+            </a>
+            <a class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:white">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item" onclick="">
+                            <h6 class="fw-normal mb-0" style="color:white">Password changed</h6>
+                            <small>15 minutes ago</small>
+                        </a>
+                    </div>
+                </div>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="css/image/user.svg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex">@AuthService.Username</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
+                        <a href="/" class="dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="text-left rounded p-4 bg-white">
+                <b><h3 class="text-dark">Bảng công nhân viên</h3></b>
+            </div>
+        </div>
+
+        <div class="container-fluid pt-4 px-4 ">
+            <div class="text-center rounded p-4 bg-white">
+                <form class="row g-4 needs-validation text-dark" id="formDealer" novalidate>
+                    @* <div class="col-md-3">
+                    <span><input class="form-control bg-white border-1 col-md-4" id="search" name="search" type="search" placeholder="Search"></span>
+                    <span class="text-danger" id="validation-error"></span>
+                    </div>
+                    <div class="col-md-3">
+                    <select class="form-select bg-white" id="validationCustom02" required>
+                    <option>Chức vụ</option>
+                    <option>Chủ tịch</option>
+                    <option>Giám đốc</option>
+                    <option>Phó giám đốc</option>
+                    <option>Trưởng phòng</option>
+                    <option>Phó phòng</option>
+                    <option>Nhân viên</option>
+                    </select>
+                    </div>
+
+                    <div class="col-md-3">
+                    <select class="form-select bg-white" id="validationCustom02" required>
+                    <option>Phòng ban</option>
+                    <option>Chủ tịch</option>
+                    <option>Giám đốc</option>
+                    <option>Phó giám đốc</option>
+                    <option>Trưởng phòng</option>
+                    <option>Phó phòng</option>
+                    <option>Nhân viên</option>
+                    </select>
+                    </div>
+
+                    <div class="col-md-3">
+                    <select class="form-select bg-white" id="validationCustom02" required>
+                    <option>mm/yyyy</option>
+                    <option>03/2024</option>
+                    <option>02/2024</option>
+                    <option>01/2024</option>
+                    <option>12/2023</option>
+
+                    </select>
+                    </div>
+
+                    <div class="mb-3 text-center">
+                    <button class="btn btn-primary" type="button">Tìm kiếm</button>
+                    </div>*@
+                </form><br />
+                <div class="w-100">
+                    <SearchBox NhanViens="NhanViens" OnSearch="@(searchCriteria => UpdateFilteredNhanViens(searchCriteria.SearchTerm, searchCriteria.SelectedJobTitle, searchCriteria.SelectedDepartment, searchCriteria.ThangChamCong))" />
+                </div>
+                <div class="table-responsive text-dark">
+                    <table class="table text-center text-dark align-middle table-bordered table-hover mb-0" id="table">
+                        <thead>
+                            <tr class="text-dark">
+                                <th scope="col">Mã nhân viên</th>
+                                <th scope="col">Họ tên</th>
+                                <th scope="col">Chức vụ</th>
+                                <th scope="col">Phòng ban</th>
+                                <th scope="col">Tháng Tính Công</th>
+                                <th scope="col">NC tối thiểu</th>
+                                <th scope="col">Số ngày nghỉ tối đa</th>
+                                <th scope="col">Số ngày công</th>
+                                <th scope="col">Đi muộn</th>
+                                <th scope="col">Về sớm</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var nhanVien in _filteredNhanViens)
+                            {
+                                <tr>
+                                    <td>@(nhanVien.MaNV ?? "N/A")</td>
+                                    <td>@(nhanVien.HoTen ?? "N/A")</td>
+                                    <td>@(nhanVien.ChucVu ?? "N/A")</td>
+                                    <td>@(PhongBans.FirstOrDefault(p => p.MaPhongBan == nhanVien.MaPhongBan)?.TenPhongBan ?? "N/A")</td>
+                                    @{
+                                        var thietLap = ThietLaps.FirstOrDefault(tl => tl.ThangTinhCong == BangCongs.FirstOrDefault(bc => bc.MaNV == nhanVien.MaNV)?.ThangTinhCong);
+                                        var ngayCongToiThieu = thietLap?.NgayCongBatBuoc ?? 0;
+                                        var thangTinhCong = "04/2024"; // Tháng cần lọc
+                                        thangTinhCong = thangChamCong1.ToString();
+                                        var ngayDauThang = DateTime.ParseExact(thangTinhCong, "MM/yyyy", CultureInfo.InvariantCulture);
+                                        var ngayCuoiThang = ngayDauThang.AddMonths(1).AddDays(-1);
+
+                                        var soNgayChamCongCuaNhanVien = DemSoNgayChamCongTrongThang(nhanVien.MaNV, ngayDauThang, ngayCuoiThang);
+                                        var soNgayDiMuon = DemSoNgayDiMuon(nhanVien.MaNV, ngayDauThang, ngayCuoiThang);
+                                        var soNgayVeSom = DemSoNgayVeSom(nhanVien.MaNV, ngayDauThang, ngayCuoiThang);
+                                    }
+                                    <td>@thangTinhCong</td>
+                                    <td>@ngayCongToiThieu</td>
+                                    <td>@(thietLap?.NgayPhepToiDa ?? 0)</td>
+                                    <td>@soNgayChamCongCuaNhanVien</td>
+                                    <td>@soNgayDiMuon</td>
+                                    <td>@soNgayVeSom</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="col-12 col-sm-3 text-center text-sm-start mx-auto pt-4 px-4">
+                        <tfoot>
+                            <tr>
+                                <td style="margin-left:50px">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item @(!HasPreviousPage() ? "disabled" : "")">
+                                                <button class="page-link" disabled="@(!HasPreviousPage())" @onclick="() => GoToPage(CurrentPage - 1)">Previous</button>
+                                            </li>
+                                            @if (totalPages <= 5)
+                                            {
+                                                for (int i = 1; i <= totalPages; i++)
+                                                {
+                                                    <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                        <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                    </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (CurrentPage <= 3)
+                                                {
+                                                    for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                                else if (CurrentPage >= totalPages - 2)
+                                                {
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = totalPages - 4; i <= totalPages; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                    for (int i = CurrentPage - 2; i <= CurrentPage + 2; i++)
+                                                    {
+                                                        <li class="page-item @(IsCurrentPage(i) ? "active" : "")">
+                                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                                        </li>
+                                                    }
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                }
+                                            }
+                                            <li class="page-item @(!HasNextPage() ? "disabled" : "")">
+                                                <button class="page-link" disabled="@(!HasNextPage())" @onclick="() => GoToPage(CurrentPage + 1)">Next</button>
+                                            </li>
+                                        </ul>
+
+                                    </nav>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
